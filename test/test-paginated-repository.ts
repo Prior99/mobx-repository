@@ -33,7 +33,7 @@ describe("PaginatedRepository", () => {
 
     beforeEach(() => {
         query = { count: 5, search: "some" };
-        pagination = { offset: 1, count: 2 };
+        pagination = { offset: 1, pageSize: 2 };
         spyFetchByQuery = jest.fn();
         repository = new TestRepository();
     });
@@ -41,7 +41,7 @@ describe("PaginatedRepository", () => {
     describe("with the loading function returning some result", () => {
         beforeEach(() => spyFetchByQuery.mockImplementation((
             { count, search }: TestQuery,
-            { offset, count: pageSize }: PaginationQuery,
+            { offset, pageSize }: PaginationQuery,
         ) => {
             const result: TestModel[] = [];
             for (let i = 0; i < (count === undefined ? 1 : count); ++i) {
@@ -73,7 +73,7 @@ describe("PaginatedRepository", () => {
                     autorun(reaction => {
                         const result = repository.byQuery({ count: 5, search: "some" }, {
                             offset: 0,
-                            count: 2,
+                            pageSize: 2,
                         });
                         if (calls++ === 0) {
                             expect(result).toEqual([]);
