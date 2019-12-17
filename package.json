@@ -1,0 +1,57 @@
+{
+  "name": "mobx-repository",
+  "version": "0.0.0",
+  "description": "Object oriented typescript repository for managing the model.",
+  "main": "dist/index.js",
+  "repository": "https://github.com/Prior99/mobx-repository",
+  "author": "Frederick Gnodtke",
+  "license": "MIT",
+  "keywords": [
+    "mobx",
+    "model",
+    "typescript"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "docs": "typedoc --mode file --out docs/ src/"
+  },
+  "typings": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "src",
+    "LICENSE",
+    "README.md"
+  ],
+  "jest": {
+    "collectCoverage": true,
+    "coverageThreshold": {
+      "global": {
+        "statements": 100,
+        "lines": 100,
+        "functions": 100,
+        "branches": 100
+      }
+    },
+    "transform": {
+      "^.+\\.(ts|tsx)$": "ts-jest"
+    },
+    "testMatch": [
+      "<rootDir>/test/test-*.ts"
+    ]
+  },
+  "peerDependencies": {
+    "mobx": "^5.15.1"
+  },
+  "devDependencies": {
+    "@types/jest": "^24.0.23",
+    "jest": "^24.9.0",
+    "mobx": "^5.15.1",
+    "ts-jest": "^24.2.0",
+    "typedoc": "^0.15.5",
+    "typescript": "^3.7.3"
+  },
+  "dependencies": {
+    "bind-decorator": "^1.0.11"
+  }
+}
