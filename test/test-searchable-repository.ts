@@ -12,13 +12,17 @@ describe("SearchableRepository", () => {
         count?: number;
     }
 
+    let spyFetchByQuery: jest.Mock<TestModel[], [TestQuery]>;
+    let repository: TestRepository;
+    let query: TestQuery;
+
     class TestRepository extends SearchableRepository<TestQuery, TestModel> {
         protected async fetchByQuery(query: TestQuery): Promise<FetchByQueryResult<TestModel>> {
             return { entities: spyFetchByQuery(query) };
         }
 
-        protected async fetchById(id: string): Promise<TestModel> {
-            fail();
+        protected async fetchById(): Promise<TestModel> {
+            throw new Error("Should not be reached.");
         }
 
         protected extractId(model: TestModel): string {
@@ -26,31 +30,28 @@ describe("SearchableRepository", () => {
         }
     }
 
-    let spyFetchByQuery: jest.Mock<TestModel[], [TestQuery]>;
-    let repository: TestRepository;
-    let query: TestQuery;
-
     beforeEach(() => {
-
         query = { count: 2, search: "some" };
         spyFetchByQuery = jest.fn();
         repository = new TestRepository();
     });
 
     describe("with the loading function returning some result", () => {
-        beforeEach(() => spyFetchByQuery.mockImplementation(({ count, search }: TestQuery) => {
-            const result: TestModel[] = [];
-            for (let i = 0; i < (count === undefined ? 1 : count); ++i) {
-                result.push({ id: `id-${i}`, value: `value-${search}-${i}` });
-            }
-            return result;
-        }));
+        beforeEach(() =>
+            spyFetchByQuery.mockImplementation(({ count, search }: TestQuery) => {
+                const result: TestModel[] = [];
+                for (let i = 0; i < (count === undefined ? 1 : count); ++i) {
+                    result.push({ id: `id-${i}`, value: `value-${search}-${i}` });
+                }
+                return result;
+            }),
+        );
 
         describe("`byQuery`", () => {
             describe("first call", () => {
                 let returnValue: TestModel[];
 
-                beforeEach(() => returnValue = repository.byQuery(query));
+                beforeEach(() => (returnValue = repository.byQuery(query)));
 
                 it("returns empty array", () => expect(returnValue).toEqual([]));
 
@@ -60,7 +61,7 @@ describe("SearchableRepository", () => {
             });
 
             describe("`byQuery` reactivity", () => {
-                it("updates after the fetch is done", (done) => {
+                it("updates after the fetch is done", () => {return new Promise(done => {
                     let calls = 0;
 
                     autorun(reaction => {
@@ -76,7 +77,7 @@ describe("SearchableRepository", () => {
                             done();
                         }
                     });
-                });
+                })});
             });
         });
 
@@ -86,7 +87,7 @@ describe("SearchableRepository", () => {
 
             beforeEach(async () => {
                 waitForQueryPromise1 = repository.waitForQuery(query);
-                repository.byQuery(query)
+                repository.byQuery(query);
                 waitForQueryPromise2 = repository.waitForQuery(query);
                 await new Promise(resolve => setTimeout(resolve));
             });
@@ -105,10 +106,11 @@ describe("SearchableRepository", () => {
                 byQueryAsyncReturnValue = await repository.byQueryAsync(query);
             });
 
-            it("resolves to entities", () => expect(byQueryAsyncReturnValue).toEqual([
-                { id: "id-0", value: "value-some-0" },
-                { id: "id-1", value: "value-some-1" },
-            ]));
+            it("resolves to entities", () =>
+                expect(byQueryAsyncReturnValue).toEqual([
+                    { id: "id-0", value: "value-some-0" },
+                    { id: "id-1", value: "value-some-1" },
+                ]));
 
             it("calls `fetchByQuery` only once", () => expect(spyFetchByQuery).toBeCalledTimes(1));
         });
@@ -120,10 +122,11 @@ describe("SearchableRepository", () => {
                 returnValue = await repository.byQueryAsync(query);
             });
 
-            it("resolves to entities", () => expect(returnValue).toEqual([
-                { id: "id-0", value: "value-some-0" },
-                { id: "id-1", value: "value-some-1" },
-            ]));
+            it("resolves to entities", () =>
+                expect(returnValue).toEqual([
+                    { id: "id-0", value: "value-some-0" },
+                    { id: "id-1", value: "value-some-1" },
+                ]));
 
             it("calls `fetchByQuery` with the query", () => expect(spyFetchByQuery).toBeCalledWith(query));
 
@@ -132,12 +135,13 @@ describe("SearchableRepository", () => {
             describe("consecutive calls to `byQuery`", () => {
                 let nextReturnValue: TestModel[];
 
-                beforeEach(() => nextReturnValue = repository.byQuery(query));
+                beforeEach(() => (nextReturnValue = repository.byQuery(query)));
 
-                it("returns the entities", () => expect(nextReturnValue).toEqual([
-                    { id: "id-0", value: "value-some-0" },
-                    { id: "id-1", value: "value-some-1" },
-                ]));
+                it("returns the entities", () =>
+                    expect(nextReturnValue).toEqual([
+                        { id: "id-0", value: "value-some-0" },
+                        { id: "id-1", value: "value-some-1" },
+                    ]));
 
                 it("doesn't call `fetchByQuery` again", () => expect(spyFetchByQuery).toBeCalledTimes(1));
             });
@@ -145,12 +149,13 @@ describe("SearchableRepository", () => {
             describe("consecutive calls to `byQueryAsync`", () => {
                 let nextReturnValue: TestModel[];
 
-                beforeEach(async () => nextReturnValue = await repository.byQueryAsync(query));
+                beforeEach(async () => (nextReturnValue = await repository.byQueryAsync(query)));
 
-                it("resolves to the entities", () => expect(nextReturnValue).toEqual([
-                    { id: "id-0", value: "value-some-0" },
-                    { id: "id-1", value: "value-some-1" },
-                ]));
+                it("resolves to the entities", () =>
+                    expect(nextReturnValue).toEqual([
+                        { id: "id-0", value: "value-some-0" },
+                        { id: "id-1", value: "value-some-1" },
+                    ]));
 
                 it("doesn't call `fetchByQuery` again", () => expect(spyFetchByQuery).toBeCalledTimes(1));
             });
@@ -161,7 +166,7 @@ describe("SearchableRepository", () => {
                 describe("calls to `byQuery`", () => {
                     let nextReturnValue: TestModel[];
 
-                    beforeEach(() => nextReturnValue = repository.byQuery(query));
+                    beforeEach(() => (nextReturnValue = repository.byQuery(query)));
 
                     it("return empty array", () => expect(nextReturnValue).toEqual([]));
 
@@ -171,12 +176,13 @@ describe("SearchableRepository", () => {
                 describe("calls to `byQueryAsync`", () => {
                     let nextReturnValue: TestModel[];
 
-                    beforeEach(async () => nextReturnValue = await repository.byQueryAsync(query));
+                    beforeEach(async () => (nextReturnValue = await repository.byQueryAsync(query)));
 
-                    it("resolves to the entities", () => expect(nextReturnValue).toEqual([
-                        { id: "id-0", value: "value-some-0" },
-                        { id: "id-1", value: "value-some-1" },
-                    ]));
+                    it("resolves to the entities", () =>
+                        expect(nextReturnValue).toEqual([
+                            { id: "id-0", value: "value-some-0" },
+                            { id: "id-1", value: "value-some-1" },
+                        ]));
 
                     it("calls `fetchByQuery` again", () => expect(spyFetchByQuery).toBeCalledTimes(2));
                 });
@@ -188,20 +194,21 @@ describe("SearchableRepository", () => {
                 describe("calls to `byQueryAsync`", () => {
                     let nextReturnValue: TestModel[];
 
-                    beforeEach(async () => nextReturnValue = await repository.byQueryAsync(query));
+                    beforeEach(async () => (nextReturnValue = await repository.byQueryAsync(query)));
 
-                    it("doesn't return the entity", () => expect(nextReturnValue).toEqual([
-                        { id: "id-1", value: "value-some-1" },
-                    ]));
+                    it("doesn't return the entity", () =>
+                        expect(nextReturnValue).toEqual([{ id: "id-1", value: "value-some-1" }]));
                 });
             });
         });
     });
 
     describe("with the loading function throwing an error", () => {
-        beforeEach(() => spyFetchByQuery.mockImplementation(() => {
-            throw new Error("Some error");
-        }));
+        beforeEach(() =>
+            spyFetchByQuery.mockImplementation(() => {
+                throw new Error("Some error");
+            }),
+        );
 
         describe("after adding an error listener", () => {
             let spyError: jest.Mock<undefined, [Error]>;

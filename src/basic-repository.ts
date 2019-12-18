@@ -18,11 +18,11 @@ export abstract class BasicRepository<TModel, TId = string> {
         return this.entities.get(id);
     }
 
-    @bind public addErrorListener(listener: ErrorListener) {
+    @bind public addErrorListener(listener: ErrorListener): void {
         this.errorListeners.add(listener);
     }
 
-    @bind public removeErrorListener(listener: ErrorListener) {
+    @bind public removeErrorListener(listener: ErrorListener): void {
         this.errorListeners.delete(listener);
     }
 
@@ -33,10 +33,11 @@ export abstract class BasicRepository<TModel, TId = string> {
 
     @bind public waitForId(id: TId): Promise<void> {
         return new Promise((resolve, reject) => {
-            if (!this.listenersById.has(id)) {
+            const listeners = this.listenersById.get(id);
+            if (!listeners) {
                 this.listenersById.set(id, []);
             }
-            this.listenersById.get(id)!.push({ resolve, reject });
+            listeners.push({ resolve, reject });
         });
     }
 
@@ -58,7 +59,7 @@ export abstract class BasicRepository<TModel, TId = string> {
         this.entities.set(this.extractId(model), model);
     }
 
-    @action.bound public reset() {
+    @action.bound public reset(): void {
         this.stateById.reset();
         this.listenersById.forEach(listeners => {
             listeners.forEach(({ reject }) => reject(new Error("Entity evicted while loading.")));
@@ -67,10 +68,11 @@ export abstract class BasicRepository<TModel, TId = string> {
         this.entities.clear();
     }
 
-    @action.bound public evict(id: TId) {
+    @action.bound public evict(id: TId): void {
         this.entities.delete(id);
-        if (this.listenersById.has(id)) {
-            this.listenersById.get(id)!.forEach(({ reject }) => reject(new Error("Entity evicted while loading.")));
+        const listeners = this.listenersById.get(id);
+        if (listeners) {
+            listeners.forEach(({ reject }) => reject(new Error("Entity evicted while loading.")));
             this.listenersById.delete(id);
         }
         this.stateById.delete(id);
@@ -81,7 +83,7 @@ export abstract class BasicRepository<TModel, TId = string> {
         return await this.byIdAsync(id);
     }
 
-    @action.bound private async loadById(id: TId) {
+    @action.bound private async loadById(id: TId): Promise<void> {
         if (this.stateById.isStatus(id, RequestStatus.DONE)) {
             return;
         }
@@ -103,8 +105,9 @@ export abstract class BasicRepository<TModel, TId = string> {
             }
             this.stateById.setStatus(id, RequestStatus.DONE);
             this.add(result);
-            if (this.listenersById.has(id)) {
-                this.listenersById.get(id)!.forEach(({ resolve }) => resolve());
+            const listeners = this.listenersById.get(id);
+            if (listeners) {
+                this.listenersById.get(id).forEach(({ resolve }) => resolve());
             }
         } catch (error) {
             this.stateById.setStatus(id, RequestStatus.ERROR, error);

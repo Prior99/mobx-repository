@@ -3,14 +3,17 @@ import { invariant } from "ts-invariant";
 
 export class SegmentWithIds<TId> extends Segment {
     constructor(offset: number, public readonly ids: Set<TId>) {
-        super(offset, ids.size)
+        super(offset, ids.size);
     }
 
     public combine(other: SegmentWithIds<TId>): SegmentWithIds<TId> {
         if (this.offset === other.offset) {
-            const ids = new Set([...this.ids, ...other.ids])
+            const ids = new Set([...this.ids, ...other.ids]);
             const expectedSize = Math.max(this.count, other.count);
-            invariant(ids.size === expectedSize, `Invalid number of ids after combining: ${ids.size} !== ${expectedSize}`);
+            invariant(
+                ids.size === expectedSize,
+                `Invalid number of ids after combining: ${ids.size} !== ${expectedSize}`,
+            );
             return new SegmentWithIds(this.offset, ids);
         }
         const [first, second] = sortSegments([this, other]);
@@ -22,10 +25,7 @@ export class SegmentWithIds<TId> extends Segment {
     }
 
     public intersect(intersection: Segment): SegmentWithIds<TId> | undefined {
-        if (
-            intersection.offset > this.offset + this.count ||
-            intersection.offset + intersection.count < this.offset
-        ) {
+        if (intersection.offset > this.offset + this.count || intersection.offset + intersection.count < this.offset) {
             return;
         }
         if (this.offset === intersection.offset) {
@@ -54,9 +54,11 @@ export function tidySegments<T>(segments: SegmentWithIds<T>[]): SegmentWithIds<T
     let changed = false;
     do {
         changed = false;
-        outer: for (let a of segments) {
-            for (let b of segments) {
-                if (a === b) { break; }
+        outer: for (const a of segments) {
+            for (const b of segments) {
+                if (a === b) {
+                    break;
+                }
                 if (a.overlaps(b)) {
                     segments = segments.filter(segment => [a, b].indexOf(segment) === -1);
                     segments.push(a.combine(b));

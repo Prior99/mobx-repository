@@ -14,7 +14,9 @@
   "scripts": {
     "build": "tsc",
     "clean": "rm -rf dist",
-    "docs": "typedoc --mode file --out docs/ src/"
+    "docs": "typedoc --mode file --out docs/ src/",
+    "lint": "eslint --max-warnings 0 src/**/*.ts test/**/*.ts",
+    "test": "jest"
   },
   "typings": "dist/index.d.ts",
   "files": [
@@ -40,11 +42,52 @@
       "<rootDir>/test/test-*.ts"
     ]
   },
+  "eslintConfig": {
+    "root": true,
+    "parser": "@typescript-eslint/parser",
+    "plugins": [
+      "@typescript-eslint",
+      "jest"
+    ],
+    "rules": {
+      "@typescript-eslint/no-non-null-assertion": "off",
+      "@typescript-eslint/explicit-function-return-type": [
+        "error",
+        {
+          "allowExpressions": true
+        }
+      ],
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          "argsIgnorePattern": "^_"
+        }
+      ]
+    },
+    "extends": [
+      "eslint:recommended",
+      "plugin:@typescript-eslint/eslint-recommended",
+      "plugin:@typescript-eslint/recommended",
+      "prettier/@typescript-eslint",
+      "plugin:jest/recommended"
+    ]
+  },
+  "prettier": {
+    "trailingComma": "all",
+    "printWidth": 120,
+    "tabWidth": 4
+  },
   "peerDependencies": {
     "mobx": "^5.15.1"
   },
   "devDependencies": {
     "@types/jest": "^24.0.23",
+    "@typescript-eslint/eslint-plugin": "^2.12.0",
+    "@typescript-eslint/parser": "^2.12.0",
+    "eslint": "^6.7.2",
+    "eslint-config-prettier": "^6.7.0",
+    "eslint-plugin-jest": "^23.1.1",
+    "eslint-plugin-prettier": "^3.1.2",
     "jest": "^24.9.0",
     "mobx": "^5.15.1",
     "prettier": "^1.19.1",

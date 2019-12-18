@@ -3,7 +3,6 @@ import bind from "bind-decorator";
 import { tidySegments, SegmentWithIds } from "./segment-with-ids";
 import { Segment } from "./segment";
 
-
 export class PaginationRange<T> {
     @observable private segments: SegmentWithIds<T>[] = [];
 
@@ -25,7 +24,7 @@ export class PaginationRange<T> {
                     }
                     return result;
                 }, [])
-                .reduce((result, intersection) => ([...result, ...intersection.ids]), [])
+                .reduce((result, intersection) => [...result, ...intersection.ids], []),
         );
     }
 
@@ -36,24 +35,25 @@ export class PaginationRange<T> {
             result: Segment[];
         }
 
-        const {
-            lastSegment,
-            result,
-            remaining,
-        } = this.segments.reduce((state: State, existing: Segment) => {
-            const { remaining, lastSegment, result } = state;
-            if (!remaining) { return state; }
-            const [intoSegments, newRemaining] = remaining.split(existing.offset);
-            const subtracted = intoSegments.subtract(lastSegment);
-            return {
-                remaining: newRemaining,
-                lastSegment: existing,
-                result: [...result, subtracted],
-            };
-        }, {
-            remaining: requested,
-            result: [],
-        });
+        const { lastSegment, result, remaining } = this.segments.reduce(
+            (state: State, existing: Segment) => {
+                const { remaining, lastSegment, result } = state;
+                if (!remaining) {
+                    return state;
+                }
+                const [intoSegments, newRemaining] = remaining.split(existing.offset);
+                const subtracted = intoSegments.subtract(lastSegment);
+                return {
+                    remaining: newRemaining,
+                    lastSegment: existing,
+                    result: [...result, subtracted],
+                };
+            },
+            {
+                remaining: requested,
+                result: [],
+            },
+        );
 
         if (remaining) {
             result.push(remaining.subtract(lastSegment));

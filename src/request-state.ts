@@ -9,31 +9,36 @@ export const enum RequestStatus {
     NOT_FOUND = "not found",
 }
 
-type RequestInfo<TState, TError> = {
-    status: RequestStatus.IN_PROGRESS,
-    state: TState,
-} | {
-    status: RequestStatus.NONE
-    state: TState,
-} | {
-    status: RequestStatus.NOT_FOUND,
-    state: TState,
-} | {
-    status: RequestStatus.DONE,
-    state: TState,
-} | {
-    status: RequestStatus.ERROR,
-    error: TError,
-    state: TState,
-};
+type RequestInfo<TState, TError> =
+    | {
+          status: RequestStatus.IN_PROGRESS;
+          state: TState;
+      }
+    | {
+          status: RequestStatus.NONE;
+          state: TState;
+      }
+    | {
+          status: RequestStatus.NOT_FOUND;
+          state: TState;
+      }
+    | {
+          status: RequestStatus.DONE;
+          state: TState;
+      }
+    | {
+          status: RequestStatus.ERROR;
+          error: TError;
+          state: TState;
+      };
 
 export class RequestState<TState = undefined, TError = Error> {
     @observable private requestStates = new Map<string, RequestInfo<TState, TError>>();
 
     constructor(private stateFactory: () => TState = () => undefined) {}
 
-    @bind public forEach(callback: (info: RequestInfo<TState, TError>) => void) {
-        this.requestStates.forEach((info) => callback(info));
+    @bind public forEach(callback: (info: RequestInfo<TState, TError>) => void): void {
+        this.requestStates.forEach(info => callback(info));
     }
 
     @bind public update(id: unknown, info: RequestInfo<TState, TError>): void {
@@ -48,7 +53,7 @@ export class RequestState<TState = undefined, TError = Error> {
         this.update(id, { status, error, state });
     }
 
-    @bind public setState(id: unknown, state: TState) {
+    @bind public setState(id: unknown, state: TState): void {
         const current = this.get(id);
         this.update(id, { ...current, state });
     }
@@ -57,15 +62,15 @@ export class RequestState<TState = undefined, TError = Error> {
         return this.get(id).state;
     }
 
-    @bind public isStatus(id: unknown, ...status: RequestStatus[]) {
+    @bind public isStatus(id: unknown, ...status: RequestStatus[]): boolean {
         return status.indexOf(this.get(id).status) !== -1;
     }
 
-    @bind public reset() {
+    @bind public reset(): void {
         this.requestStates.clear();
     }
 
-    @bind public delete(id: unknown) {
+    @bind public delete(id: unknown): void {
         this.requestStates.delete(JSON.stringify(id));
     }
 

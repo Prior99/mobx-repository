@@ -24,10 +24,11 @@ describe("PaginationRange", () => {
             range.add(segment3);
         });
 
-        it("returns loaded range", () => expect(range.loadedSegments).toEqual([
-            { offset: 5, count: 10 },
-            { offset: 20, count: 5 },
-        ]))
+        it("returns loaded range", () =>
+            expect(range.loadedSegments).toEqual([
+                { offset: 5, count: 10 },
+                { offset: 20, count: 5 },
+            ]));
 
         it.each([
             {
@@ -45,12 +46,30 @@ describe("PaginationRange", () => {
             {
                 segment: new Segment(1, 40),
                 expected: new Set([
-                    105, 106, 107, 108, 109, 110, 111, 112,
-                    120, 121, 122, 123, 124,
-                    107, 108, 109, 110, 111, 112, 113, 114,
+                    105,
+                    106,
+                    107,
+                    108,
+                    109,
+                    110,
+                    111,
+                    112,
+                    120,
+                    121,
+                    122,
+                    123,
+                    124,
+                    107,
+                    108,
+                    109,
+                    110,
+                    111,
+                    112,
+                    113,
+                    114,
                 ]),
             },
-        ])("`getIds` test set %#", ({ segment, expected }: { segment: Segment, expected: Set<number> }) => {
+        ])("`getIds` test set %#", ({ segment, expected }: { segment: Segment; expected: Set<number> }) => {
             expect(range.getIds(segment)).toEqual(expected);
         });
 
@@ -71,9 +90,12 @@ describe("PaginationRange", () => {
                 requested: new Segment(2, 30),
                 expected: [new Segment(2, 3), new Segment(15, 5), new Segment(25, 7)],
             },
-        ])("`getMissingSegments` test set %#", ({ requested, expected }: { requested: Segment, expected: Segment[] }) => {
-            expect(range.getMissingSegments(requested)).toEqual(expected);
-        });
+        ])(
+            "`getMissingSegments` test set %#",
+            ({ requested, expected }: { requested: Segment; expected: Segment[] }) => {
+                expect(range.getMissingSegments(requested)).toEqual(expected);
+            },
+        );
     });
 
     describe("after adding three separate segments", () => {
@@ -86,11 +108,8 @@ describe("PaginationRange", () => {
             ].forEach(segment => range.add(segment));
         });
 
-        it("returns loaded range", () => expect(range.loadedSegments).toEqual([
-            new Segment(3, 2),
-            new Segment(6, 1),
-            new Segment(8, 2),
-        ]));
+        it("returns loaded range", () =>
+            expect(range.loadedSegments).toEqual([new Segment(3, 2), new Segment(6, 1), new Segment(8, 2)]));
 
         it.each([
             {
@@ -103,9 +122,9 @@ describe("PaginationRange", () => {
             },
             {
                 segment: new Segment(1, 40),
-                expected: new Set([103, 104, 106, 108, 109 ]),
+                expected: new Set([103, 104, 106, 108, 109]),
             },
-        ])("`getIds` test set %#", ({ segment, expected }: { segment: Segment, expected: Set<number> }) => {
+        ])("`getIds` test set %#", ({ segment, expected }: { segment: Segment; expected: Set<number> }) => {
             expect(range.getIds(segment)).toEqual(expected);
         });
 
@@ -118,22 +137,20 @@ describe("PaginationRange", () => {
                 requested: new Segment(1, 12),
                 expected: false,
             },
-        ])("`isFullyLoaded` test set %#", ({ requested, expected }: { requested: Segment, expected: boolean }) => {
+        ])("`isFullyLoaded` test set %#", ({ requested, expected }: { requested: Segment; expected: boolean }) => {
             expect(range.isFullyLoaded(requested)).toEqual(expected);
         });
 
         it.each([
             {
                 requested: new Segment(1, 12),
-                expected: [
-                    new Segment(1, 2),
-                    new Segment(5, 1),
-                    new Segment(7, 1),
-                    new Segment(10, 3),
-                ],
+                expected: [new Segment(1, 2), new Segment(5, 1), new Segment(7, 1), new Segment(10, 3)],
             },
-        ])("`getMissingSegments` test set %#", ({ requested, expected }: { requested: Segment, expected: Segment[] }) => {
-            expect(range.getMissingSegments(requested)).toEqual(expected);
-        });
+        ])(
+            "`getMissingSegments` test set %#",
+            ({ requested, expected }: { requested: Segment; expected: Segment[] }) => {
+                expect(range.getMissingSegments(requested)).toEqual(expected);
+            },
+        );
     });
 });

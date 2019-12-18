@@ -32,7 +32,11 @@ describe("RequestState", () => {
         });
 
         describe("initially", () => {
-            it("does nothing in `forEach`", () => requestState.forEach(() => fail()));
+            it("does nothing in `forEach`", () => {
+                const spy = jest.fn();
+                requestState.forEach(spy);
+                expect(spy).not.toHaveBeenCalled();
+            });
 
             it("has status `NONE` for any id", () => {
                 expect(requestState.isStatus("some", RequestStatus.NONE)).toBe(true);
@@ -112,7 +116,11 @@ describe("RequestState", () => {
                 describe("after reset", () => {
                     beforeEach(() => requestState.reset());
 
-                    it("does nothing in `forEach`", () => requestState.forEach(() => fail()));
+                    it("does nothing in `forEach`", () => {
+                        const spy = jest.fn();
+                        requestState.forEach(spy);
+                        expect(spy).not.toHaveBeenCalled();
+                    });
 
                     it("has status `NONE` for any id", () => {
                         expect(requestState.isStatus("some", RequestStatus.NONE)).toBe(true);
@@ -126,7 +134,11 @@ describe("RequestState", () => {
                 describe("after deleting the id", () => {
                     beforeEach(() => requestState.delete("some"));
 
-                    it("does nothing in `forEach`", () => requestState.forEach(() => fail()));
+                    it("does nothing in `forEach`", () => {
+                        const spy = jest.fn();
+                        requestState.forEach(spy);
+                        expect(spy).not.toHaveBeenCalled();
+                    });
 
                     it("has status `NONE` for any id", () => {
                         expect(requestState.isStatus("some", RequestStatus.NONE)).toBe(true);

@@ -7,6 +7,9 @@ describe("BasicRepository", () => {
         value: string;
     }
 
+    let spyFetchById: jest.Mock<TestModel, [string]>;
+    let repository: TestRepository;
+
     class TestRepository extends BasicRepository<TestModel> {
         protected async fetchById(id: string): Promise<TestModel> {
             return spyFetchById(id);
@@ -16,9 +19,6 @@ describe("BasicRepository", () => {
             return model.id;
         }
     }
-
-    let spyFetchById: jest.Mock<TestModel, [string]>;
-    let repository: TestRepository;
 
     beforeEach(() => {
         spyFetchById = jest.fn();
@@ -30,9 +30,11 @@ describe("BasicRepository", () => {
     it("does not report any id as loaded", () => expect(repository.isLoaded("some")).toBe(false));
 
     describe("with the loading function throwing an error", () => {
-        beforeEach(() => spyFetchById.mockImplementation(() => {
-            throw new Error("Some error");
-        }));
+        beforeEach(() =>
+            spyFetchById.mockImplementation(() => {
+                throw new Error("Some error");
+            }),
+        );
 
         describe("after adding an error listener", () => {
             let spyError: jest.Mock<undefined, [Error]>;
@@ -61,13 +63,13 @@ describe("BasicRepository", () => {
     });
 
     describe("with the entity not being present", () => {
-        beforeEach(() => spyFetchById.mockImplementation((id: string) => undefined));
+        beforeEach(() => spyFetchById.mockImplementation(() => undefined));
 
         describe("`byIdAsync`", () => {
             describe("first call", () => {
                 let returnValue: TestModel | undefined;
 
-                beforeEach(async () => returnValue = await repository.byIdAsync("some"));
+                beforeEach(async () => (returnValue = await repository.byIdAsync("some")));
 
                 it("returns `undefined`", () => expect(returnValue).toBeUndefined());
 
@@ -92,7 +94,7 @@ describe("BasicRepository", () => {
             describe("`byIdAsync`", () => {
                 let returnValue: TestModel | undefined;
 
-                beforeEach(async () => returnValue = await repository.byIdAsync("some"));
+                beforeEach(async () => (returnValue = await repository.byIdAsync("some")));
 
                 it("returns `undefined`", () => expect(returnValue).toBeUndefined());
 
@@ -108,7 +110,7 @@ describe("BasicRepository", () => {
             describe("first call", () => {
                 let returnValue: TestModel | undefined;
 
-                beforeEach(() => returnValue = repository.byId("some"));
+                beforeEach(() => (returnValue = repository.byId("some")));
 
                 it("returns `undefined`", () => expect(returnValue).toBeUndefined());
 
@@ -118,7 +120,7 @@ describe("BasicRepository", () => {
             });
 
             describe("`byId` reactivity", () => {
-                it("updates after the fetch is done", (done) => {
+                it("updates after the fetch is done", () => {return new Promise(done => {
                     let calls = 0;
 
                     autorun(reaction => {
@@ -134,7 +136,7 @@ describe("BasicRepository", () => {
                             done();
                         }
                     });
-                });
+                })});
             });
         });
 
@@ -144,7 +146,7 @@ describe("BasicRepository", () => {
 
             beforeEach(async () => {
                 waitForIdPromise1 = repository.waitForId("some");
-                repository.byId("some")
+                repository.byId("some");
                 waitForIdPromise2 = repository.waitForId("some");
                 await new Promise(resolve => setTimeout(resolve));
             });
@@ -162,10 +164,11 @@ describe("BasicRepository", () => {
                 byIdAsyncReturnValue = await repository.byIdAsync("some");
             });
 
-            it("resolves to the entity", () => expect(byIdAsyncReturnValue).toEqual({
-                id: "some",
-                value: "value-some",
-            }));
+            it("resolves to the entity", () =>
+                expect(byIdAsyncReturnValue).toEqual({
+                    id: "some",
+                    value: "value-some",
+                }));
 
             it("calls `fetchById` only once", () => expect(spyFetchById).toBeCalledTimes(1));
         });
@@ -173,12 +176,13 @@ describe("BasicRepository", () => {
         describe("`byIdAsync`", () => {
             let returnValue: TestModel | undefined;
 
-            beforeEach(async () => returnValue = await repository.byIdAsync("some"));
+            beforeEach(async () => (returnValue = await repository.byIdAsync("some")));
 
-            it("resolves to the entity", () => expect(returnValue).toEqual({
-                id: "some",
-                value: "value-some",
-            }));
+            it("resolves to the entity", () =>
+                expect(returnValue).toEqual({
+                    id: "some",
+                    value: "value-some",
+                }));
 
             it("calls `fetchById` with the id", () => expect(spyFetchById).toBeCalledWith("some"));
 
@@ -187,12 +191,13 @@ describe("BasicRepository", () => {
             describe("consecutive calls to `byId`", () => {
                 let nextReturnValue: TestModel | undefined;
 
-                beforeEach(() => nextReturnValue = repository.byId("some"));
+                beforeEach(() => (nextReturnValue = repository.byId("some")));
 
-                it("returns the entity", () => expect(nextReturnValue).toEqual({
-                    id: "some",
-                    value: "value-some",
-                }));
+                it("returns the entity", () =>
+                    expect(nextReturnValue).toEqual({
+                        id: "some",
+                        value: "value-some",
+                    }));
 
                 it("doesn't call `fetchById` again", () => expect(spyFetchById).toBeCalledTimes(1));
             });
@@ -202,21 +207,23 @@ describe("BasicRepository", () => {
                     spyFetchById.mockImplementation((id: string) => ({ id, value: `other-value-${id}` }));
                 });
 
-                it("returns the new entity", () => expect(repository.reloadId("some")).resolves.toEqual({
-                    id: "some",
-                    value: "other-value-some",
-                }));
+                it("returns the new entity", () =>
+                    expect(repository.reloadId("some")).resolves.toEqual({
+                        id: "some",
+                        value: "other-value-some",
+                    }));
             });
 
             describe("consecutive calls to `byIdAsync`", () => {
                 let nextReturnValue: TestModel | undefined;
 
-                beforeEach(async () => nextReturnValue = await repository.byIdAsync("some"));
+                beforeEach(async () => (nextReturnValue = await repository.byIdAsync("some")));
 
-                it("resolves to the entity", () => expect(nextReturnValue).toEqual({
-                    id: "some",
-                    value: "value-some",
-                }));
+                it("resolves to the entity", () =>
+                    expect(nextReturnValue).toEqual({
+                        id: "some",
+                        value: "value-some",
+                    }));
 
                 it("doesn't call `fetchById` again", () => expect(spyFetchById).toBeCalledTimes(1));
             });
@@ -227,7 +234,7 @@ describe("BasicRepository", () => {
                 describe("calls to `byId`", () => {
                     let nextReturnValue: TestModel | undefined;
 
-                    beforeEach(() => nextReturnValue = repository.byId("some"));
+                    beforeEach(() => (nextReturnValue = repository.byId("some")));
 
                     it("returns the `undefined`", () => expect(nextReturnValue).toBeUndefined());
 
@@ -237,12 +244,13 @@ describe("BasicRepository", () => {
                 describe("calls to `byIdAsync`", () => {
                     let nextReturnValue: TestModel | undefined;
 
-                    beforeEach(async () => nextReturnValue = await repository.byIdAsync("some"));
+                    beforeEach(async () => (nextReturnValue = await repository.byIdAsync("some")));
 
-                    it("resolves to the entity", () => expect(nextReturnValue).toEqual({
-                        id: "some",
-                        value: "value-some",
-                    }));
+                    it("resolves to the entity", () =>
+                        expect(nextReturnValue).toEqual({
+                            id: "some",
+                            value: "value-some",
+                        }));
 
                     it("calls `fetchById` again", () => expect(spyFetchById).toBeCalledTimes(2));
                 });
@@ -254,7 +262,7 @@ describe("BasicRepository", () => {
                 describe("calls to `byId`", () => {
                     let nextReturnValue: TestModel | undefined;
 
-                    beforeEach(() => nextReturnValue = repository.byId("some"));
+                    beforeEach(() => (nextReturnValue = repository.byId("some")));
 
                     it("returns the `undefined`", () => expect(nextReturnValue).toBeUndefined());
 
@@ -264,12 +272,13 @@ describe("BasicRepository", () => {
                 describe("calls to `byIdAsync`", () => {
                     let nextReturnValue: TestModel | undefined;
 
-                    beforeEach(async () => nextReturnValue = await repository.byIdAsync("some"));
+                    beforeEach(async () => (nextReturnValue = await repository.byIdAsync("some")));
 
-                    it("resolves to the entity", () => expect(nextReturnValue).toEqual({
-                        id: "some",
-                        value: "value-some",
-                    }));
+                    it("resolves to the entity", () =>
+                        expect(nextReturnValue).toEqual({
+                            id: "some",
+                            value: "value-some",
+                        }));
 
                     it("calls `fetchById` again", () => expect(spyFetchById).toBeCalledTimes(2));
                 });

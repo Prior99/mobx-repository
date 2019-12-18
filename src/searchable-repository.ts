@@ -13,10 +13,8 @@ export interface FetchByQueryResult<TModel> {
     entities: TModel[];
 }
 
-export abstract class SearchableRepository<
-TQuery,
-TModel,
-TId = string> extends BasicRepository<TModel, TId> implements Searchable<TQuery, TModel> {
+export abstract class SearchableRepository<TQuery, TModel, TId = string> extends BasicRepository<TModel, TId>
+    implements Searchable<TQuery, TModel> {
     protected stateByQuery = new RequestState<StateSearchable<TId>>(() => ({
         resultingIds: new Set(),
     }));
@@ -43,14 +41,14 @@ TId = string> extends BasicRepository<TModel, TId> implements Searchable<TQuery,
         });
     }
 
-    @action.bound public evict(id: TId) {
+    @action.bound public evict(id: TId): void {
         super.evict(id);
         this.stateByQuery.forEach(requestState => {
             requestState.state.resultingIds.delete(id);
         });
     }
 
-    @action.bound public reset() {
+    @action.bound public reset(): void {
         super.reset();
         this.listenersByQuery.clear();
         this.stateByQuery.reset();
