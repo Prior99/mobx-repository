@@ -2,6 +2,7 @@ import { observable, action, computed } from "mobx";
 import bind from "bind-decorator";
 import { tidySegments, SegmentWithIds } from "./segment-with-ids";
 import { Segment } from "./segment";
+import { Pagination } from "./pagination";
 
 export class PaginationRange<T> {
     @observable private segments: SegmentWithIds<T>[] = [];
@@ -14,11 +15,11 @@ export class PaginationRange<T> {
         return this.segments.map(({ offset, count }) => new Segment(offset, count));
     }
 
-    @bind getIds(segment: Segment): Set<T> {
+    @bind getIds(segment: Pagination): Set<T> {
         return new Set(
             this.segments
                 .reduce((result: SegmentWithIds<T>[], existing: SegmentWithIds<T>) => {
-                    const intersection = existing.intersect(segment);
+                    const intersection = existing.intersect(new Segment(segment));
                     if (intersection) {
                         return [...result, intersection];
                     }
@@ -28,7 +29,7 @@ export class PaginationRange<T> {
         );
     }
 
-    @bind public getMissingSegments(requested: Segment): Segment[] {
+    @bind public getMissingSegments(requested: Pagination): Segment[] {
         interface State {
             remaining: Segment;
             lastSegment?: Segment;
@@ -50,7 +51,7 @@ export class PaginationRange<T> {
                 };
             },
             {
-                remaining: requested,
+                remaining: new Segment(requested),
                 result: [],
             },
         );
@@ -62,7 +63,7 @@ export class PaginationRange<T> {
         return result.filter(segment => segment.count > 0);
     }
 
-    @bind public isFullyLoaded(requested: Segment): boolean {
+    @bind public isFullyLoaded(requested: Pagination): boolean {
         return this.getMissingSegments(requested).length === 0;
     }
 }

@@ -5,7 +5,20 @@ export function sortSegments<T extends Segment>(segments: T[]): T[] {
 }
 
 export class Segment implements Pagination {
-    constructor(public readonly offset: number, public readonly count: number) {}
+    public readonly offset: number;
+    public readonly count: number;
+
+    constructor(pagination: Pagination);
+    constructor(offset: number, count: number)
+    constructor(arg1: Pagination | number, arg2?: number) {
+        if (typeof arg1 === "object") {
+            this.offset = arg1.offset;
+            this.count = arg1.count;
+        } else {
+            this.offset = arg1;
+            this.count = arg2;
+        }
+    }
 
     public overlaps(other: Segment): boolean {
         if (this.offset === other.offset) {
