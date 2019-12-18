@@ -131,7 +131,7 @@ describe("PaginationRange", () => {
         it.each([
             {
                 requested: new Segment(8, 2),
-                expected: false,
+                expected: true,
             },
             {
                 requested: new Segment(1, 12),
@@ -201,7 +201,7 @@ describe("PaginationRange", () => {
             },
             {
                 requested: new Segment(1, 12),
-                expected: [new Segment(3, 9)],
+                expected: [new Segment(3, 10)],
             },
         ])(
             "`getMissingSegments` test set %#",
@@ -276,7 +276,7 @@ describe("PaginationRange", () => {
             },
             {
                 requested: new Segment(0, 12),
-                expected: [new Segment(0, 100)],
+                expected: [new Segment(0, 1)],
             },
             {
                 requested: new Segment(0, 18),

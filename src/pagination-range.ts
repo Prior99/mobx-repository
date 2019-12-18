@@ -30,51 +30,15 @@ export class PaginationRange<T> {
     }
 
     @bind public getMissingSegments(requested: Pagination): Segment[] {
-        interface State {
-            remaining: Segment;
-            lastSegment?: Segment;
-            result: Segment[];
+        let missingSegments: Segment[] = [new Segment(requested)];
+        for (const existing of this.segments) {
+            const newMissingSegments: Segment[] = [];
+            for (const missing of missingSegments) {
+                newMissingSegments.push(...missing.subtract(existing));
+            }
+            missingSegments = newMissingSegments;
         }
-
-        const { lastSegment, result, remaining } = this.segments.reduce(
-            (state: State, existing: Segment) => {
-                const { remaining, lastSegment, result } = state;
-                if (!remaining) {
-                    return state;
-                }
-                if (remaining.equals(existing)) {
-                    return {
-                        remaining: undefined,
-                        lastSegment: existing,
-                        result
-                    };
-                }
-                const splits = remaining.split(existing.offset);
-                if (splits.length === 1) {
-                    return {
-                        remaining: splits[0],
-                        lastSegment: existing,
-                        result,
-                    };
-                }
-                const subtracted = splits[0].subtract(lastSegment);
-                return {
-                    remaining: splits[1],
-                    lastSegment: existing,
-                    result: [...result, subtracted],
-                };
-            },
-            {
-                remaining: new Segment(requested),
-                result: [],
-            },
-        );
-
-        if (remaining) {
-            result.push(remaining.subtract(lastSegment));
-        }
-
-        return result.filter(segment => segment.count > 0);
+        return missingSegments;
     }
 
     @bind public isFullyLoaded(requested: Pagination): boolean {

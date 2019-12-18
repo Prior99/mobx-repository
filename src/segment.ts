@@ -52,12 +52,18 @@ export class Segment implements Pagination {
         if (this.equals(subtrahend) || this.containedIn(subtrahend)) {
             return [];
         }
+        if (this.offset === subtrahend.offset) {
+            return [new Segment(subtrahend.end, this.end - subtrahend.end)];
+        }
+        if (this.end === subtrahend.end) {
+            return [new Segment(this.offset, this.count - subtrahend.count)];
+        }
         if (this.contains(subtrahend)) {
             const [before, after] = this.split(subtrahend.offset);
             return [before, new Segment(after.offset + subtrahend.count, after.count - subtrahend.count)];
         }
         if (this.offset < subtrahend.offset) {
-            return [new Segment(this.offset, this.end - subtrahend.offset - 1)];
+            return [new Segment(this.offset, this.count - (this.end - subtrahend.offset))];
         }
         // Then this condition must be true: `this.offset > subtrahend.offset`.
         return [new Segment(subtrahend.end - 1, this.end - subtrahend.end)];
