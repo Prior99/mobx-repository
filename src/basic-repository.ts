@@ -61,7 +61,7 @@ export abstract class BasicRepository<TModel, TId = string> {
     @action.bound public reset(): void {
         this.stateById.reset();
         this.listenersById.forEach(listeners => {
-            listeners.forEach(({ reject }) => reject(new Error("Store was reset while waiting.")));
+            listeners.forEach(({ reject }) => reject(new Error("Repository was reset while waiting.")));
         });
         this.listenersById.clear();
         this.entities.clear();

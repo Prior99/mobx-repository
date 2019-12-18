@@ -254,33 +254,48 @@ describe("PaginatedRepository", () => {
             });
         });
 
-        describe("waiting for queries", () => {
-            let spyReject: jest.Mock<undefined, [Error]>;
-            let spyResolve: jest.Mock;
+        describe("`waitForQuery`", () => {
+            let spyResolve1: jest.Mock;
+            let spyReject1: jest.Mock<undefined, [Error]>;
+            let spyResolve2: jest.Mock;
+            let spyReject2: jest.Mock<undefined, [Error]>;
 
             beforeEach(() => {
-                spyReject = jest.fn();
-                spyResolve = jest.fn();
+                spyResolve1 = jest.fn();
+                spyReject1 = jest.fn();
+                spyResolve2 = jest.fn();
+                spyReject2 = jest.fn();
                 repository
                     .waitForQuery(hugeQuery, {
                         offset: 10,
                         count: 50,
                     })
-                    .then(spyResolve)
-                    .catch(spyReject);
+                    .then(spyResolve1)
+                    .catch(spyReject1);
+                repository
+                    .waitForQuery(hugeQuery, {
+                        offset: 10,
+                        count: 50,
+                    })
+                    .then(spyResolve2)
+                    .catch(spyReject2);
             });
 
             it("is still pending", () => {
-                expect(spyResolve).not.toHaveBeenCalled();
-                expect(spyReject).not.toHaveBeenCalled();
+                expect(spyResolve1).not.toHaveBeenCalled();
+                expect(spyReject1).not.toHaveBeenCalled();
+                expect(spyResolve2).not.toHaveBeenCalled();
+                expect(spyReject2).not.toHaveBeenCalled();
             });
 
             describe("after evicting an unrelated id", () => {
                 beforeEach(() => repository.evict("id-1109"));
 
                 it("is still pending", () => {
-                    expect(spyResolve).not.toHaveBeenCalled();
-                    expect(spyReject).not.toHaveBeenCalled();
+                    expect(spyResolve1).not.toHaveBeenCalled();
+                    expect(spyReject1).not.toHaveBeenCalled();
+                    expect(spyResolve2).not.toHaveBeenCalled();
+                    expect(spyReject2).not.toHaveBeenCalled();
                 });
             });
 
@@ -291,8 +306,10 @@ describe("PaginatedRepository", () => {
                     beforeEach(() => repository.evict("id-1109"));
 
                     it("is still pending", () => {
-                        expect(spyResolve).not.toHaveBeenCalled();
-                        expect(spyReject).not.toHaveBeenCalled();
+                        expect(spyResolve1).not.toHaveBeenCalled();
+                        expect(spyReject1).not.toHaveBeenCalled();
+                        expect(spyResolve2).not.toHaveBeenCalled();
+                        expect(spyReject2).not.toHaveBeenCalled();
                     });
                 });
             });
@@ -301,16 +318,20 @@ describe("PaginatedRepository", () => {
                 beforeEach(() => repository.byQueryAsync(hugeQuery, { offset: 10, count: 25 }));
 
                 it("is still pending", () => {
-                    expect(spyResolve).not.toHaveBeenCalled();
-                    expect(spyReject).not.toHaveBeenCalled();
+                    expect(spyResolve1).not.toHaveBeenCalled();
+                    expect(spyReject1).not.toHaveBeenCalled();
+                    expect(spyResolve2).not.toHaveBeenCalled();
+                    expect(spyReject2).not.toHaveBeenCalled();
                 });
 
-                describe("after resetting the store", () => {
+                describe("after resetting the repository", () => {
                     beforeEach(() => repository.reset());
 
                     it("was rejected", () => {
-                        expect(spyResolve).not.toHaveBeenCalled();
-                        expect(spyReject).toHaveBeenCalled();
+                        expect(spyResolve1).not.toHaveBeenCalled();
+                        expect(spyReject1).toHaveBeenCalled();
+                        expect(spyResolve2).not.toHaveBeenCalled();
+                        expect(spyReject2).toHaveBeenCalled();
                     });
                 });
 
@@ -318,8 +339,10 @@ describe("PaginatedRepository", () => {
                     beforeEach(() => repository.evict("id-12"));
 
                     it("was rejected", () => {
-                        expect(spyResolve).not.toHaveBeenCalled();
-                        expect(spyReject).toHaveBeenCalled();
+                        expect(spyResolve1).not.toHaveBeenCalled();
+                        expect(spyReject1).toHaveBeenCalled();
+                        expect(spyResolve2).not.toHaveBeenCalled();
+                        expect(spyReject2).toHaveBeenCalled();
                     });
                 });
 
@@ -327,8 +350,10 @@ describe("PaginatedRepository", () => {
                     beforeEach(() => repository.byQueryAsync(hugeQuery, { offset: 35, count: 25 }));
 
                     it("is resolved", () => {
-                        expect(spyResolve).toHaveBeenCalled();
-                        expect(spyReject).not.toHaveBeenCalled();
+                        expect(spyResolve1).toHaveBeenCalled();
+                        expect(spyReject1).not.toHaveBeenCalled();
+                        expect(spyResolve2).toHaveBeenCalled();
+                        expect(spyReject2).not.toHaveBeenCalled();
                     });
                 });
 
@@ -341,8 +366,10 @@ describe("PaginatedRepository", () => {
                     });
 
                     it("was rejected", () => {
-                        expect(spyResolve).not.toHaveBeenCalled();
-                        expect(spyReject).toHaveBeenCalled();
+                        expect(spyResolve1).not.toHaveBeenCalled();
+                        expect(spyReject1).toHaveBeenCalled();
+                        expect(spyResolve2).not.toHaveBeenCalled();
+                        expect(spyReject2).toHaveBeenCalled();
                     });
                 });
             });

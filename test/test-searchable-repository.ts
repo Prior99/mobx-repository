@@ -61,40 +61,75 @@ describe("SearchableRepository", () => {
             });
 
             describe("`byQuery` reactivity", () => {
-                it("updates after the fetch is done", () => {return new Promise(done => {
-                    let calls = 0;
+                it("updates after the fetch is done", () => {
+                    return new Promise(done => {
+                        let calls = 0;
 
-                    autorun(reaction => {
-                        const result = repository.byQuery({ count: 2, search: "some" });
-                        if (calls++ === 0) {
-                            expect(result).toEqual([]);
-                        } else {
-                            expect(result).toEqual([
-                                { id: "id-0", value: "value-some-0" },
-                                { id: "id-1", value: "value-some-1" },
-                            ]);
-                            reaction.dispose();
-                            done();
-                        }
+                        autorun(reaction => {
+                            const result = repository.byQuery({ count: 2, search: "some" });
+                            if (calls++ === 0) {
+                                expect(result).toEqual([]);
+                            } else {
+                                expect(result).toEqual([
+                                    { id: "id-0", value: "value-some-0" },
+                                    { id: "id-1", value: "value-some-1" },
+                                ]);
+                                reaction.dispose();
+                                done();
+                            }
+                        });
                     });
-                })});
+                });
             });
         });
 
         describe("`waitForQuery`", () => {
-            let waitForQueryPromise1: Promise<void>;
-            let waitForQueryPromise2: Promise<void>;
+            let spyResolve1: jest.Mock;
+            let spyReject1: jest.Mock<undefined, [Error]>;
+            let spyResolve2: jest.Mock;
+            let spyReject2: jest.Mock<undefined, [Error]>;
 
-            beforeEach(async () => {
-                waitForQueryPromise1 = repository.waitForQuery(query);
-                repository.byQuery(query);
-                waitForQueryPromise2 = repository.waitForQuery(query);
-                await new Promise(resolve => setTimeout(resolve));
+            beforeEach(() => {
+                spyResolve1 = jest.fn();
+                spyReject1 = jest.fn();
+                spyResolve2 = jest.fn();
+                spyReject2 = jest.fn();
+                repository
+                    .waitForQuery(query)
+                    .then(spyResolve1)
+                    .catch(spyReject1);
+                repository
+                    .waitForQuery(query)
+                    .then(spyResolve2)
+                    .catch(spyReject2);
+            });
+            it("is still pending", () => {
+                expect(spyResolve1).not.toHaveBeenCalled();
+                expect(spyReject1).not.toHaveBeenCalled();
+                expect(spyResolve2).not.toHaveBeenCalled();
+                expect(spyReject2).not.toHaveBeenCalled();
             });
 
-            it("promise 1 resolves", () => expect(waitForQueryPromise1).resolves.toBeUndefined());
+            describe("after invoking `byQueryAsync`", () => {
+                beforeEach(() => repository.byQueryAsync(query));
 
-            it("promise 2 resolves", () => expect(waitForQueryPromise2).resolves.toBeUndefined());
+                it("is resolved", () => {
+                    expect(spyResolve1).toHaveBeenCalled();
+                    expect(spyReject1).not.toHaveBeenCalled();
+                    expect(spyResolve2).toHaveBeenCalled();
+                    expect(spyReject2).not.toHaveBeenCalled();
+                });
+            });
+
+            describe("after resetting the repository", () => {
+                beforeEach(() => repository.reset());
+                it("was rejected", () => {
+                    expect(spyResolve1).not.toHaveBeenCalled();
+                    expect(spyReject1).toHaveBeenCalled();
+                    expect(spyResolve2).not.toHaveBeenCalled();
+                    expect(spyReject2).toHaveBeenCalled();
+                });
+            });
         });
 
         describe("invoking `byQueryAsync` during `byQuery`", () => {
@@ -185,6 +220,38 @@ describe("SearchableRepository", () => {
                         ]));
 
                     it("calls `fetchByQuery` again", () => expect(spyFetchByQuery).toBeCalledTimes(2));
+                });
+            });
+
+            describe("after evicting an an unrelated entity", () => {
+                beforeEach(() => repository.evict("id-1190"));
+
+                describe("calls to `byQuery`", () => {
+                    let nextReturnValue: TestModel[];
+
+                    beforeEach(() => (nextReturnValue = repository.byQuery(query)));
+
+                    it("return the entities", () =>
+                        expect(nextReturnValue).toEqual([
+                            { id: "id-0", value: "value-some-0" },
+                            { id: "id-1", value: "value-some-1" },
+                        ]));
+
+                    it("doesn't call `fetchByQuery` again", () => expect(spyFetchByQuery).toBeCalledTimes(1));
+                });
+
+                describe("calls to `byQueryAsync`", () => {
+                    let nextReturnValue: TestModel[];
+
+                    beforeEach(async () => (nextReturnValue = await repository.byQueryAsync(query)));
+
+                    it("resolves to the entities", () =>
+                        expect(nextReturnValue).toEqual([
+                            { id: "id-0", value: "value-some-0" },
+                            { id: "id-1", value: "value-some-1" },
+                        ]));
+
+                    it("don't call `fetchByQuery` again", () => expect(spyFetchByQuery).toBeCalledTimes(1));
                 });
             });
 

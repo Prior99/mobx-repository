@@ -76,7 +76,7 @@ export abstract class PaginatedRepository<TQuery, TModel, TId = string> extends 
 
     @action.bound public reset(): void {
         super.reset();
-        this.listenersByQuery.forEach(({ listener }) => listener.reject(new Error("Store was reset while waiting.")));
+        this.listenersByQuery.forEach(({ listener }) => listener.reject(new Error("Repository was reset while waiting.")));
         this.listenersByQuery.clear();
         this.stateByQuery.reset();
     }
