@@ -289,4 +289,35 @@ describe("PaginationRange", () => {
             },
         );
     });
+
+    describe("after adding three segments with gaps", () => {
+        beforeEach(() => {
+            [
+                new SegmentWithIds(31, new Set([131, 132, 133, 134, 135, 136, 137, 138, 139, 140])),
+                new SegmentWithIds(51, new Set([151, 152, 153, 154, 155, 156, 157, 158, 159, 160])),
+                new SegmentWithIds(71, new Set([171, 172, 173, 174, 175, 176, 177, 178, 179, 180])),
+            ].forEach(segment => range.add(segment));
+        });
+
+        it.each([
+            {
+                requested: new Segment(25, 75),
+                expected: [
+                    new Segment(25, 6),
+                    new Segment(41, 10),
+                    new Segment(61, 10),
+                    new Segment(81, 19),
+                ],
+            },
+            {
+                requested: new Segment(36, 20),
+                expected: [new Segment(41, 10)],
+            },
+        ])(
+            "`getMissingSegments` test set %#",
+            ({ requested, expected }: { requested: Segment; expected: Segment[] }) => {
+                expect(range.getMissingSegments(requested)).toEqual(expected);
+            },
+        );
+    });
 });

@@ -19,7 +19,7 @@ export interface ListenerSpecification<TQuery> {
 
 export abstract class PaginatedRepository<TQuery, TModel, TId = string> extends BasicRepository<TModel, TId>
     implements PaginatedSearchable<TQuery, TModel> {
-    protected stateByQuery = new RequestState<PaginationState<TId>, TQuery>(() => new PaginationState());
+    protected stateByQuery = new RequestState<TQuery, PaginationState<TId>>(() => new PaginationState());
     protected listenersByQuery = new Set<ListenerSpecification<TQuery>>();
     protected defaultCount = 10;
 
@@ -66,11 +66,17 @@ export abstract class PaginatedRepository<TQuery, TModel, TId = string> extends 
 
     @action.bound public evict(id: TId): void {
         super.evict(id);
-        this.stateByQuery.removeWhere(info => !info.state.paginationRange.hasId(id));
+        this.stateByQuery.forEach(info => {
+            if (info.state.paginationRange.hasId(id)) {
+                this.stateByQuery.delete(info.id);
+                this.callListenersByQuery(info.id, new Error("Entity was evicted while waiting."));
+            }
+        });
     }
 
     @action.bound public reset(): void {
         super.reset();
+        this.listenersByQuery.forEach(({ listener }) => listener.reject(new Error("Store was reset while waiting.")));
         this.listenersByQuery.clear();
         this.stateByQuery.reset();
     }
@@ -78,16 +84,19 @@ export abstract class PaginatedRepository<TQuery, TModel, TId = string> extends 
     private callListenersByQuery(query: TQuery, error?: Error): void {
         [...this.listenersByQuery]
             .filter(listenerSpec => deepEqual(query, listenerSpec.query))
-            .filter(listenerSpec =>
-                this.stateByQuery.getState(query).paginationRange.isFullyLoaded(listenerSpec.pagination),
-            )
             .forEach(listenerSpec => {
+                const completed = this.stateByQuery
+                    .getState(query)
+                    .paginationRange.isFullyLoaded(listenerSpec.pagination);
+                if (!error && !completed) {
+                    return;
+                }
+                this.listenersByQuery.delete(listenerSpec);
                 if (error) {
                     listenerSpec.listener.reject(error);
                 } else {
                     listenerSpec.listener.resolve();
                 }
-                this.listenersByQuery.delete(listenerSpec);
             });
     }
 

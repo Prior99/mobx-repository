@@ -65,8 +65,8 @@ export class Segment implements Pagination {
         if (this.offset < subtrahend.offset) {
             return [new Segment(this.offset, this.count - (this.end - subtrahend.offset))];
         }
-        // Then this condition must be true: `this.offset > subtrahend.offset`.
-        return [new Segment(subtrahend.end - 1, this.end - subtrahend.end)];
+        // Hence, this condition must be true: `this.offset > subtrahend.offset`.
+        return [new Segment(subtrahend.end, this.end - subtrahend.end)];
     }
 
     public get end(): number {

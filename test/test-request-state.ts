@@ -5,7 +5,7 @@ describe("RequestState", () => {
         value: string;
     }
 
-    let requestState: RequestState<TestState>;
+    let requestState: RequestState<string, TestState>;
 
     describe("without factory", () => {
         beforeEach(() => {
@@ -56,7 +56,7 @@ describe("RequestState", () => {
                 expect(spyForEach).toHaveBeenCalledWith({
                     status: RequestStatus.NONE,
                     state: { value: "updated" },
-                    error: undefined,
+                    id: "some",
                 });
             });
 
@@ -90,7 +90,7 @@ describe("RequestState", () => {
                 expect(spyForEach).toHaveBeenCalledWith({
                     status: RequestStatus.IN_PROGRESS,
                     state: { value: "from factory" },
-                    error: undefined,
+                    id: "some",
                 });
             });
 

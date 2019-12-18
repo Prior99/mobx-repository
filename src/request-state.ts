@@ -9,39 +9,44 @@ export const enum RequestStatus {
     NOT_FOUND = "not found",
 }
 
-type RequestInfo<TState, TError> =
+type RequestInfo<TId, TState, TError> =
     | {
           status: RequestStatus.IN_PROGRESS;
           state: TState;
+          id: TId;
       }
     | {
           status: RequestStatus.NONE;
           state: TState;
+          id: TId;
       }
     | {
           status: RequestStatus.NOT_FOUND;
           state: TState;
+          id: TId;
       }
     | {
           status: RequestStatus.DONE;
           state: TState;
+          id: TId;
       }
     | {
           status: RequestStatus.ERROR;
           error: TError;
           state: TState;
+          id: TId;
       };
 
-export class RequestState<TState = undefined, TId = string, TError = Error> {
-    @observable private requestStates = new Map<string, RequestInfo<TState, TError>>();
+export class RequestState<TId = string, TState = undefined, TError = Error> {
+    @observable private requestStates = new Map<string, RequestInfo<TId, TState, TError>>();
 
     constructor(private stateFactory: () => TState = () => undefined) {}
 
-    @bind public forEach(callback: (info: RequestInfo<TState, TError>) => void): void {
+    @bind public forEach(callback: (info: RequestInfo<TId, TState, TError>) => void): void {
         this.requestStates.forEach(info => callback(info));
     }
 
-    @bind public update(id: TId, info: RequestInfo<TState, TError>): void {
+    @bind public update(id: TId, info: RequestInfo<TId, TState, TError>): void {
         const key = JSON.stringify(id);
         this.requestStates.set(key, info);
     }
@@ -50,7 +55,7 @@ export class RequestState<TState = undefined, TId = string, TError = Error> {
     public setStatus(id: TId, status: RequestStatus.ERROR, error: TError): void;
     @bind public setStatus(id: TId, status: RequestStatus, error?: TError): void {
         const state = this.getState(id);
-        this.update(id, { status, error, state });
+        this.update(id, { status, error, state, id });
     }
 
     @bind public setState(id: TId, state: TState): void {
@@ -74,22 +79,15 @@ export class RequestState<TState = undefined, TId = string, TError = Error> {
         this.requestStates.delete(JSON.stringify(id));
     }
 
-    @bind protected get(id: TId): RequestInfo<TState, TError> {
+    @bind protected get(id: TId): RequestInfo<TId, TState, TError> {
         const key = JSON.stringify(id);
         if (!this.requestStates.has(key)) {
             return {
+                id,
                 status: RequestStatus.NONE,
                 state: this.stateFactory(),
             };
         }
         return this.requestStates.get(key);
-    }
-
-    @bind public removeWhere(callback: (info: RequestInfo<TState, TError>) => boolean): void {
-        this.requestStates.forEach((info, key) => {
-            if (!callback(info)) {
-                this.requestStates.delete(key);
-            }
-        });
     }
 }

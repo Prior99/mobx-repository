@@ -5,7 +5,7 @@ import bind from "bind-decorator";
 
 export abstract class BasicRepository<TModel, TId = string> {
     @observable protected entities = new Map<TId, TModel>();
-    protected stateById = new RequestState();
+    protected stateById = new RequestState<TId>();
     protected listenersById = new Map<TId, Listener[]>();
     protected errorListeners = new Set<ErrorListener>();
 
@@ -61,7 +61,7 @@ export abstract class BasicRepository<TModel, TId = string> {
     @action.bound public reset(): void {
         this.stateById.reset();
         this.listenersById.forEach(listeners => {
-            listeners.forEach(({ reject }) => reject(new Error("Entity evicted while loading.")));
+            listeners.forEach(({ reject }) => reject(new Error("Store was reset while waiting.")));
         });
         this.listenersById.clear();
         this.entities.clear();
@@ -69,10 +69,7 @@ export abstract class BasicRepository<TModel, TId = string> {
 
     @action.bound public evict(id: TId): void {
         this.entities.delete(id);
-        if (this.listenersById.has(id)) {
-            this.listenersById.get(id)!.forEach(({ reject }) => reject(new Error("Entity evicted while loading.")));
-            this.listenersById.delete(id);
-        }
+        this.callListenersById(id, new Error("Entity evicted while waiting."));
         this.stateById.delete(id);
     }
 

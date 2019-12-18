@@ -45,13 +45,12 @@ export class SegmentWithIds<TId> extends Segment {
             invariant(ids.size === count, `Invalid number of ids after intersecting: ${ids.size} !== ${count}`);
             return new SegmentWithIds(this.offset, ids);
         }
-        if (intersection.offset > this.offset) {
-            const count = Math.min(this.end - intersection.offset, intersection.count);
-            const idStartIndex = intersection.offset - this.offset;
-            const ids = new Set([...this.ids].slice(idStartIndex, idStartIndex + count));
-            invariant(ids.size === count, `Invalid number of ids after intersecting: ${ids.size} !== ${count}`);
-            return new SegmentWithIds(intersection.offset, ids);
-        }
+        // Hence, this condition must be true: `this.offset < intersection.offset`.
+        const count = Math.min(this.end - intersection.offset, intersection.count);
+        const idStartIndex = intersection.offset - this.offset;
+        const ids = new Set([...this.ids].slice(idStartIndex, idStartIndex + count));
+        invariant(ids.size === count, `Invalid number of ids after intersecting: ${ids.size} !== ${count}`);
+        return new SegmentWithIds(intersection.offset, ids);
     }
 }
 

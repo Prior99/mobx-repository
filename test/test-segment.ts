@@ -186,7 +186,7 @@ describe("Segment", () => {
         {
             minuend: new Segment(2, 3),
             subtrahend: new Segment(1, 3),
-            expected: [new Segment(3, 1)],
+            expected: [new Segment(4, 1)],
         },
         {
             minuend: new Segment(1, 1),
@@ -206,7 +206,7 @@ describe("Segment", () => {
         {
             minuend: new Segment(4, 5),
             subtrahend: new Segment(2, 5),
-            expected: [new Segment(6, 2)],
+            expected: [new Segment(7, 2)],
         },
         {
             minuend: new Segment(2, 6),
@@ -238,6 +238,11 @@ describe("Segment", () => {
             subtrahend: new Segment(11, 2),
             expected: [new Segment(1, 10)],
         },
+        {
+            minuend: new Segment(36, 20),
+            subtrahend: new Segment(31, 10),
+            expected: [new Segment(41, 15)],
+        }
     ])(
         "`subtract` test set %#",
         ({ subtrahend, minuend, expected }: { subtrahend: Segment; minuend: Segment; expected: Segment[] }) => {

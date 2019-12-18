@@ -36,6 +36,20 @@ describe("BasicRepository", () => {
             }),
         );
 
+        describe("while waiting for an id", () => {
+            let waitForIdPromise: Promise<void>;
+
+            beforeEach(() => {
+                waitForIdPromise = repository.waitForId("some");
+            });
+
+            describe("when invoking `byIdAsync`", () => {
+                beforeEach(async () => await repository.byIdAsync("some"));
+
+                it("makes the promise reject", () => expect(waitForIdPromise).rejects.toEqual(expect.any(Error)));
+            });
+        });
+
         describe("after adding an error listener", () => {
             let spyError: jest.Mock<undefined, [Error]>;
 
@@ -120,23 +134,25 @@ describe("BasicRepository", () => {
             });
 
             describe("`byId` reactivity", () => {
-                it("updates after the fetch is done", () => {return new Promise(done => {
-                    let calls = 0;
+                it("updates after the fetch is done", () => {
+                    return new Promise(done => {
+                        let calls = 0;
 
-                    autorun(reaction => {
-                        const result = repository.byId("some");
-                        if (calls++ === 0) {
-                            expect(result).toBeUndefined();
-                        } else {
-                            expect(result).toEqual({
-                                id: "some",
-                                value: "value-some",
-                            });
-                            reaction.dispose();
-                            done();
-                        }
+                        autorun(reaction => {
+                            const result = repository.byId("some");
+                            if (calls++ === 0) {
+                                expect(result).toBeUndefined();
+                            } else {
+                                expect(result).toEqual({
+                                    id: "some",
+                                    value: "value-some",
+                                });
+                                reaction.dispose();
+                                done();
+                            }
+                        });
                     });
-                })});
+                });
             });
         });
 

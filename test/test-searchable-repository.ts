@@ -249,5 +249,19 @@ describe("SearchableRepository", () => {
                 });
             });
         });
+
+        describe("while waiting for a query", () => {
+            let waitForQueryPromise: Promise<void>;
+
+            beforeEach(() => {
+                waitForQueryPromise = repository.waitForQuery(query);
+            });
+
+            describe("when invoking `byIdAsync`", () => {
+                beforeEach(async () => await repository.byQuery(query));
+
+                it("makes the promise reject", () => expect(waitForQueryPromise).rejects.toEqual(expect.any(Error)));
+            });
+        });
     });
 });
