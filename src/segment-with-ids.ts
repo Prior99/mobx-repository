@@ -25,7 +25,7 @@ export class SegmentWithIds<TId> extends Segment {
     }
 
     public intersect(intersection: Segment): SegmentWithIds<TId> | undefined {
-        if (intersection.offset > this.offset + this.count || intersection.offset + intersection.count < this.offset) {
+        if (intersection.offset > this.end || intersection.end < this.offset) {
             return;
         }
         if (this.offset === intersection.offset) {
@@ -35,13 +35,13 @@ export class SegmentWithIds<TId> extends Segment {
             return new SegmentWithIds(this.offset, ids);
         }
         if (this.offset > intersection.offset) {
-            const count = Math.min(intersection.offset + intersection.count - this.offset, this.count);
+            const count = Math.min(intersection.end - this.offset, this.count);
             const ids = new Set([...this.ids].slice(0, count));
             invariant(ids.size === count, `Invalid number of ids after intersecting: ${ids.size} !== ${count}`);
             return new SegmentWithIds(this.offset, ids);
         }
         if (intersection.offset > this.offset) {
-            const count = Math.min(this.offset + this.count - intersection.offset, intersection.count);
+            const count = Math.min(this.end - intersection.offset, intersection.count);
             const idStartIndex = intersection.offset - this.offset;
             const ids = new Set([...this.ids].slice(idStartIndex, idStartIndex + count));
             invariant(ids.size === count, `Invalid number of ids after intersecting: ${ids.size} !== ${count}`);

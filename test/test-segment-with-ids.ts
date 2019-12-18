@@ -5,37 +5,37 @@ describe("SegmentWithIds", () => {
         it.each([
             // Intersection overlaps with beginning of segment.
             {
-                given: [new SegmentWithIds(10, new Set([110, 111, 112])), { offset: 8, count: 3 }],
+                given: [new SegmentWithIds(10, new Set([110, 111, 112])), new Segment(8, 3)],
                 expected: new SegmentWithIds(10, new Set([110])),
             },
             // Intersection overlaps with end of segment.
             {
-                given: [new SegmentWithIds(10, new Set([110, 111, 112])), { offset: 11, count: 4 }],
+                given: [new SegmentWithIds(10, new Set([110, 111, 112])), new Segment(11, 4)],
                 expected: new SegmentWithIds(11, new Set([111, 112])),
             },
             // Intersection is contained withing segment.
             {
-                given: [new SegmentWithIds(10, new Set([110, 111, 112])), { offset: 11, count: 1 }],
+                given: [new SegmentWithIds(10, new Set([110, 111, 112])), new Segment(11, 1)],
                 expected: new SegmentWithIds(11, new Set([111])),
             },
             // Intersection is before segment.
             {
-                given: [new SegmentWithIds(10, new Set([110, 111, 112])), { offset: 7, count: 1 }],
+                given: [new SegmentWithIds(10, new Set([110, 111, 112])), new Segment(7, 1)],
                 expected: undefined,
             },
             // Intersection is after segment.
             {
-                given: [new SegmentWithIds(10, new Set([110, 111, 112])), { offset: 113, count: 1 }],
+                given: [new SegmentWithIds(10, new Set([110, 111, 112])), new Segment(113, 1)],
                 expected: undefined,
             },
             // Segment is contained within intersection.
             {
-                given: [new SegmentWithIds(10, new Set([110, 111, 112])), { offset: 8, count: 10 }],
-                expected: { offset: 10, count: 3, ids: new Set([110, 111, 112]) },
+                given: [new SegmentWithIds(10, new Set([110, 111, 112])), new Segment(8, 10)],
+                expected: new SegmentWithIds(10, new Set([110, 111, 112])),
             },
             // Intersection is equal to segment.
             {
-                given: [new SegmentWithIds(10, new Set([110, 111, 112])), { offset: 10, count: 3 }],
+                given: [new SegmentWithIds(10, new Set([110, 111, 112])), new Segment(10, 3)],
                 expected: new SegmentWithIds(10, new Set([110, 111, 112])),
             },
         ])(

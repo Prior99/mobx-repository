@@ -12,11 +12,11 @@ export class Segment implements Pagination {
             return true;
         }
         const [first, second] = sortSegments([this, other]);
-        return first.offset + first.count >= second.offset;
+        return first.end >= second.offset;
     }
 
     public split(at: number): [Segment, Segment] | [Segment] {
-        if (at <= this.offset || at >= this.offset + this.count - 1) {
+        if (at <= this.offset || at >= this.end - 1) {
             return [new Segment(this.offset, this.count)];
         }
         const firstSegmentCount = at - this.offset;

@@ -1,4 +1,4 @@
-import { RequestStatus, RequestState } from "./request-state";
+import { RequestState } from "./request-state";
 import { FetchByQueryResult } from "./searchable-repository";
 import { action } from "mobx";
 import bind from "bind-decorator";

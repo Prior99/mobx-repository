@@ -33,11 +33,10 @@ export abstract class BasicRepository<TModel, TId = string> {
 
     @bind public waitForId(id: TId): Promise<void> {
         return new Promise((resolve, reject) => {
-            const listeners = this.listenersById.get(id);
-            if (!listeners) {
+            if (!this.listenersById.has(id)) {
                 this.listenersById.set(id, []);
             }
-            listeners.push({ resolve, reject });
+            this.listenersById.get(id)!.push({ resolve, reject });
         });
     }
 
@@ -70,9 +69,8 @@ export abstract class BasicRepository<TModel, TId = string> {
 
     @action.bound public evict(id: TId): void {
         this.entities.delete(id);
-        const listeners = this.listenersById.get(id);
-        if (listeners) {
-            listeners.forEach(({ reject }) => reject(new Error("Entity evicted while loading.")));
+        if (this.listenersById.has(id)) {
+            this.listenersById.get(id)!.forEach(({ reject }) => reject(new Error("Entity evicted while loading.")));
             this.listenersById.delete(id);
         }
         this.stateById.delete(id);
@@ -105,9 +103,8 @@ export abstract class BasicRepository<TModel, TId = string> {
             }
             this.stateById.setStatus(id, RequestStatus.DONE);
             this.add(result);
-            const listeners = this.listenersById.get(id);
-            if (listeners) {
-                this.listenersById.get(id).forEach(({ resolve }) => resolve());
+            if (this.listenersById.has(id)) {
+                this.listenersById.get(id)!.forEach(({ resolve }) => resolve());
             }
         } catch (error) {
             this.stateById.setStatus(id, RequestStatus.ERROR, error);
