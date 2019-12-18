@@ -7,6 +7,10 @@ export class SegmentWithIds<TId> extends Segment {
         super(offset, ids.size);
     }
 
+    @bind public hasId(id: TId): boolean {
+        return this.ids.has(id);
+    }
+
     @bind public combine(other: SegmentWithIds<TId>): SegmentWithIds<TId> {
         if (this.offset === other.offset) {
             const ids = new Set([...this.ids, ...other.ids]);

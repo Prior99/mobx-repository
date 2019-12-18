@@ -4,10 +4,10 @@ import { tidySegments, SegmentWithIds } from "./segment-with-ids";
 import { Segment } from "./segment";
 import { Pagination } from "./pagination";
 
-export class PaginationRange<T> {
-    @observable private segments: SegmentWithIds<T>[] = [];
+export class PaginationRange<TId> {
+    @observable private segments: SegmentWithIds<TId>[] = [];
 
-    @action.bound public add(segment: SegmentWithIds<T>): void {
+    @action.bound public add(segment: SegmentWithIds<TId>): void {
         this.segments = tidySegments([...this.segments, segment]);
     }
 
@@ -15,10 +15,10 @@ export class PaginationRange<T> {
         return this.segments.map(({ offset, count }) => new Segment(offset, count));
     }
 
-    @bind getIds(segment: Pagination): Set<T> {
+    @bind getIds(segment: Pagination): Set<TId> {
         return new Set(
             this.segments
-                .reduce((result: SegmentWithIds<T>[], existing: SegmentWithIds<T>) => {
+                .reduce((result: SegmentWithIds<TId>[], existing: SegmentWithIds<TId>) => {
                     const intersection = existing.intersect(new Segment(segment));
                     if (intersection) {
                         return [...result, intersection];
@@ -43,5 +43,9 @@ export class PaginationRange<T> {
 
     @bind public isFullyLoaded(requested: Pagination): boolean {
         return this.getMissingSegments(requested).length === 0;
+    }
+
+    @bind public hasId(id: TId): boolean {
+        return this.segments.some(segment => segment.hasId(id));
     }
 }

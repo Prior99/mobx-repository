@@ -178,10 +178,15 @@ describe("PaginatedRepository", () => {
                 describe("calls to `byQueryAsync`", () => {
                     let nextReturnValue: TestModel[];
 
-                    beforeEach(async () => (nextReturnValue = await repository.byQueryAsync(query)));
+                    beforeEach(async () => (nextReturnValue = await repository.byQueryAsync(query, pagination)));
 
-                    it("doesn't return the entity", () =>
-                        expect(nextReturnValue).toEqual([{ id: "id-1", value: "value-some-1" }]));
+                    it("resolves to the entities", () =>
+                        expect(nextReturnValue).toEqual([
+                            { id: "id-1", value: "value-some-1" },
+                            { id: "id-2", value: "value-some-2" },
+                        ]));
+
+                    it("calls `fetchByQuery` again", () => expect(spyFetchByQuery).toBeCalledTimes(2));
                 });
             });
         });

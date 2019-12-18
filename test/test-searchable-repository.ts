@@ -191,13 +191,28 @@ describe("SearchableRepository", () => {
             describe("after evicting an entity that was part of the query", () => {
                 beforeEach(() => repository.evict("id-0"));
 
+                describe("calls to `byQuery`", () => {
+                    let nextReturnValue: TestModel[];
+
+                    beforeEach(() => (nextReturnValue = repository.byQuery(query)));
+
+                    it("return empty array", () => expect(nextReturnValue).toEqual([]));
+
+                    it("calls `fetchByQuery` again", () => expect(spyFetchByQuery).toBeCalledTimes(2));
+                });
+
                 describe("calls to `byQueryAsync`", () => {
                     let nextReturnValue: TestModel[];
 
                     beforeEach(async () => (nextReturnValue = await repository.byQueryAsync(query)));
 
-                    it("doesn't return the entity", () =>
-                        expect(nextReturnValue).toEqual([{ id: "id-1", value: "value-some-1" }]));
+                    it("resolves to the entities", () =>
+                        expect(nextReturnValue).toEqual([
+                            { id: "id-0", value: "value-some-0" },
+                            { id: "id-1", value: "value-some-1" },
+                        ]));
+
+                    it("calls `fetchByQuery` again", () => expect(spyFetchByQuery).toBeCalledTimes(2));
                 });
             });
         });

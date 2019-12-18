@@ -15,7 +15,7 @@ export interface FetchByQueryResult<TModel> {
 
 export abstract class SearchableRepository<TQuery, TModel, TId = string> extends BasicRepository<TModel, TId>
     implements Searchable<TQuery, TModel> {
-    protected stateByQuery = new RequestState<StateSearchable<TId>>(() => ({
+    protected stateByQuery = new RequestState<StateSearchable<TId>, TQuery>(() => ({
         resultingIds: new Set(),
     }));
     protected listenersByQuery = new Map<string, Listener[]>();
@@ -44,9 +44,7 @@ export abstract class SearchableRepository<TQuery, TModel, TId = string> extends
 
     @action.bound public evict(id: TId): void {
         super.evict(id);
-        this.stateByQuery.forEach(requestState => {
-            requestState.state.resultingIds.delete(id);
-        });
+        this.stateByQuery.removeWhere(info => !info.state.resultingIds.has(id));
     }
 
     @action.bound public reset(): void {

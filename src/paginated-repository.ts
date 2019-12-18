@@ -19,7 +19,7 @@ export interface ListenerSpecification<TQuery> {
 
 export abstract class PaginatedRepository<TQuery, TModel, TId = string> extends BasicRepository<TModel, TId>
     implements PaginatedSearchable<TQuery, TModel> {
-    protected stateByQuery = new RequestState<PaginationState<TId>>(() => new PaginationState());
+    protected stateByQuery = new RequestState<PaginationState<TId>, TQuery>(() => new PaginationState());
     protected listenersByQuery = new Set<ListenerSpecification<TQuery>>();
     protected defaultCount = 10;
 
@@ -58,13 +58,21 @@ export abstract class PaginatedRepository<TQuery, TModel, TId = string> extends 
     }
 
     @bind private isQueryDoneInRange(query: TQuery, pagination: Pagination): boolean {
-        console.log("is done", query, pagination)
         if (!this.stateByQuery.isStatus(query, RequestStatus.DONE)) {
             return false;
         }
-        console.log("known", this.stateByQuery.getState(query).paginationRange.loadedSegments)
-        console.log("loaded", this.stateByQuery.getState(query).paginationRange.getMissingSegments(pagination))
         return this.stateByQuery.getState(query).paginationRange.isFullyLoaded(pagination);
+    }
+
+    @action.bound public evict(id: TId): void {
+        super.evict(id);
+        this.stateByQuery.removeWhere(info => !info.state.paginationRange.hasId(id));
+    }
+
+    @action.bound public reset(): void {
+        super.reset();
+        this.listenersByQuery.clear();
+        this.stateByQuery.reset();
     }
 
     private callListenersByQuery(query: TQuery, error?: Error): void {
@@ -94,7 +102,6 @@ export abstract class PaginatedRepository<TQuery, TModel, TId = string> extends 
         }
         this.stateByQuery.setStatus(query, RequestStatus.IN_PROGRESS);
         const segmentsToLoad = this.stateByQuery.getState(query).paginationRange.getMissingSegments(pagination);
-        console.log(segmentsToLoad)
         try {
             await Promise.all(segmentsToLoad.map(segment => this.loadIndividualRange(query, segment)));
         } catch (error) {
