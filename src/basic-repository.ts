@@ -81,6 +81,20 @@ export abstract class BasicRepository<TModel, TId = string> {
         return await this.byIdAsync(id);
     }
 
+    private callListenersById(id: TId, error?: Error): void {
+        if (!this.listenersById.has(id)) {
+            return;
+        }
+        this.listenersById.get(id)!.forEach(({ resolve, reject }) => {
+            if (error) {
+                reject(error);
+            } else {
+                resolve();
+            }
+        });
+        this.listenersById.delete(id);
+    }
+
     @action.bound private async loadById(id: TId): Promise<void> {
         if (this.stateById.isStatus(id, RequestStatus.DONE)) {
             return;
@@ -103,12 +117,11 @@ export abstract class BasicRepository<TModel, TId = string> {
             }
             this.stateById.setStatus(id, RequestStatus.DONE);
             this.add(result);
-            if (this.listenersById.has(id)) {
-                this.listenersById.get(id)!.forEach(({ resolve }) => resolve());
-            }
+            this.callListenersById(id);
         } catch (error) {
             this.stateById.setStatus(id, RequestStatus.ERROR, error);
             this.errorListeners.forEach(callback => callback(error));
+            this.callListenersById(id, error);
         }
     }
 }

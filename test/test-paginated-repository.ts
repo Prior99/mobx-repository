@@ -133,7 +133,7 @@ describe("PaginatedRepository", () => {
             describe("consecutive calls to `byQueryAsync` with same pagination", () => {
                 let nextReturnValue: TestModel[];
 
-                beforeEach(async () => (nextReturnValue = await repository.byQueryAsync(query)));
+                beforeEach(async () => (nextReturnValue = await repository.byQueryAsync(query, pagination)));
 
                 it("resolves to the entities", () =>
                     expect(nextReturnValue).toEqual([

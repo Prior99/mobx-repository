@@ -1,64 +1,121 @@
-import { RequestState } from "./request-state";
+import { RequestState, RequestStatus } from "./request-state";
 import { FetchByQueryResult } from "./searchable-repository";
-import { action } from "mobx";
+import { action, transaction } from "mobx";
 import bind from "bind-decorator";
-import { PaginationRange } from "./pagination-range";
 import { PaginatedSearchable } from "./paginated-searchable";
 import { BasicRepository } from "./basic-repository";
 import { Pagination } from "./pagination";
 import { Listener } from "./listener";
+import { PaginationState } from "./pagination-state";
+import { Segment } from "./segment";
+import { SegmentWithIds } from "./segment-with-ids";
+import deepEqual from "deep-equal";
 
-export interface StatePaginated<TId> {
-    paginationCompleted: boolean;
-    paginationRange: PaginationRange<TId>;
-}
-
-export interface PaginatedFetchByQueryResult<TModel> extends FetchByQueryResult<TModel> {
-    entities: TModel[];
+export interface ListenerSpecification<TQuery> {
+    query: TQuery;
+    pagination: Pagination;
+    listener: Listener;
 }
 
 export abstract class PaginatedRepository<TQuery, TModel, TId = string> extends BasicRepository<TModel, TId>
     implements PaginatedSearchable<TQuery, TModel> {
-    protected stateByQuery = new RequestState<StatePaginated<TId>>(() => ({
-        paginationCompleted: false,
-        paginationRange: new PaginationRange(),
-    }));
-    protected listenersByQuery = new Map<TQuery, Listener[]>();
+    protected stateByQuery = new RequestState<PaginationState<TId>>(() => new PaginationState());
+    protected listenersByQuery = new Set<ListenerSpecification<TQuery>>();
     protected defaultCount = 10;
 
-    protected abstract async fetchByQuery(
-        query: TQuery,
-        pagination?: Pagination,
-    ): Promise<PaginatedFetchByQueryResult<TModel>>;
+    private get defaultPagination(): Pagination {
+        return { offset: 0, count: this.defaultCount };
+    }
 
-    @bind public byQuery(query: TQuery, pagination: Pagination = { offset: 0, count: this.defaultCount }): TModel[] {
+    private completePagination(partialPagination: Partial<Pagination>): Pagination {
+        return { ...this.defaultPagination, ...partialPagination };
+    }
+
+    protected abstract async fetchByQuery(query: TQuery, segment: Segment): Promise<FetchByQueryResult<TModel>>;
+
+    @bind public byQuery(query: TQuery, pagination: Partial<Pagination> = {}): TModel[] {
         this.loadByQuery(query, pagination);
         return this.resolveEntities(query, pagination);
     }
 
-    @bind public async byQueryAsync(
-        query: TQuery,
-        pagination: Pagination = { offset: 0, count: this.defaultCount },
-    ): Promise<TModel[]> {
+    @bind public async byQueryAsync(query: TQuery, pagination: Partial<Pagination> = {}): Promise<TModel[]> {
         await this.loadByQuery(query, pagination);
         return this.resolveEntities(query, pagination);
     }
 
-    @bind public waitForQuery(_query: TQuery): Promise<void> {
-        throw new Error();
+    @bind public waitForQuery(query: TQuery, partialPagination: Partial<Pagination> = {}): Promise<void> {
+        const pagination = this.completePagination(partialPagination);
+        return new Promise((resolve, reject) => {
+            const listener = { resolve, reject };
+            this.listenersByQuery.add({ query, pagination, listener });
+        });
     }
 
-    @bind protected resolveEntities(
-        _query: TQuery,
-        _pagination: Pagination = { offset: 0, count: this.defaultCount },
-    ): TModel[] {
-        throw new Error();
+    @bind protected resolveEntities(query: TQuery, partialPagination: Partial<Pagination>): TModel[] {
+        const pagination = this.completePagination(partialPagination);
+        const { paginationRange } = this.stateByQuery.getState(query);
+        return [...paginationRange.getIds(pagination)].map(id => this.entities.get(id)!);
     }
 
-    @action.bound protected async loadByQuery(
-        _query: TQuery,
-        _pagination: Pagination = { offset: 0, count: this.defaultCount },
-    ): Promise<void> {
-        throw new Error();
+    @bind private isQueryDoneInRange(query: TQuery, pagination: Pagination): boolean {
+        console.log("is done", query, pagination)
+        if (!this.stateByQuery.isStatus(query, RequestStatus.DONE)) {
+            return false;
+        }
+        console.log("known", this.stateByQuery.getState(query).paginationRange.loadedSegments)
+        console.log("loaded", this.stateByQuery.getState(query).paginationRange.getMissingSegments(pagination))
+        return this.stateByQuery.getState(query).paginationRange.isFullyLoaded(pagination);
+    }
+
+    private callListenersByQuery(query: TQuery, error?: Error): void {
+        [...this.listenersByQuery]
+            .filter(listenerSpec => deepEqual(query, listenerSpec.query))
+            .filter(listenerSpec =>
+                this.stateByQuery.getState(query).paginationRange.isFullyLoaded(listenerSpec.pagination),
+            )
+            .forEach(listenerSpec => {
+                if (error) {
+                    listenerSpec.listener.reject(error);
+                } else {
+                    listenerSpec.listener.resolve();
+                }
+                this.listenersByQuery.delete(listenerSpec);
+            });
+    }
+
+    @action.bound protected async loadByQuery(query: TQuery, partialPagination: Partial<Pagination>): Promise<void> {
+        const pagination = this.completePagination(partialPagination);
+        if (this.isQueryDoneInRange(query, pagination) || this.stateByQuery.isStatus(query, RequestStatus.ERROR)) {
+            return;
+        }
+        if (this.stateByQuery.isStatus(query, RequestStatus.IN_PROGRESS)) {
+            await this.waitForQuery(query, pagination);
+            return await this.loadByQuery(query, pagination);
+        }
+        this.stateByQuery.setStatus(query, RequestStatus.IN_PROGRESS);
+        const segmentsToLoad = this.stateByQuery.getState(query).paginationRange.getMissingSegments(pagination);
+        console.log(segmentsToLoad)
+        try {
+            await Promise.all(segmentsToLoad.map(segment => this.loadIndividualRange(query, segment)));
+        } catch (error) {
+            this.stateByQuery.setStatus(query, RequestStatus.ERROR, error);
+            this.errorListeners.forEach(callback => callback(error));
+            this.callListenersByQuery(query, error);
+        }
+        this.stateByQuery.setStatus(query, RequestStatus.DONE);
+        this.callListenersByQuery(query);
+    }
+
+    @action.bound private async loadIndividualRange(
+        query: TQuery,
+        segment: Segment,
+    ): Promise<FetchByQueryResult<TModel>> {
+        const result = await this.fetchByQuery(query, segment);
+        transaction(() => {
+            result.entities.forEach(entity => this.add(entity));
+            const ids = new Set(result.entities.map(entity => this.extractId(entity)));
+            this.stateByQuery.getState(query).paginationRange.add(new SegmentWithIds(segment.offset, ids));
+        });
+        return result;
     }
 }

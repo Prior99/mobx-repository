@@ -42,10 +42,24 @@ export class PaginationRange<T> {
                 if (!remaining) {
                     return state;
                 }
-                const [intoSegments, newRemaining] = remaining.split(existing.offset);
-                const subtracted = intoSegments.subtract(lastSegment);
+                if (remaining.equals(existing)) {
+                    return {
+                        remaining: undefined,
+                        lastSegment: existing,
+                        result
+                    };
+                }
+                const splits = remaining.split(existing.offset);
+                if (splits.length === 1) {
+                    return {
+                        remaining: splits[0],
+                        lastSegment: existing,
+                        result,
+                    };
+                }
+                const subtracted = splits[0].subtract(lastSegment);
                 return {
-                    remaining: newRemaining,
+                    remaining: splits[1],
                     lastSegment: existing,
                     result: [...result, subtracted],
                 };

@@ -18,7 +18,7 @@ export abstract class SearchableRepository<TQuery, TModel, TId = string> extends
     protected stateByQuery = new RequestState<StateSearchable<TId>>(() => ({
         resultingIds: new Set(),
     }));
-    protected listenersByQuery = new Map<TQuery, Listener[]>();
+    protected listenersByQuery = new Map<string, Listener[]>();
 
     protected abstract async fetchByQuery(query: TQuery): Promise<FetchByQueryResult<TModel>>;
 
@@ -33,11 +33,12 @@ export abstract class SearchableRepository<TQuery, TModel, TId = string> extends
     }
 
     @bind public waitForQuery(query: TQuery): Promise<void> {
+        const key = JSON.stringify(query);
         return new Promise((resolve, reject) => {
-            if (!this.listenersByQuery.has(query)) {
-                this.listenersByQuery.set(query, []);
+            if (!this.listenersByQuery.has(key)) {
+                this.listenersByQuery.set(key, []);
             }
-            this.listenersByQuery.get(query)!.push({ resolve, reject });
+            this.listenersByQuery.get(key)!.push({ resolve, reject });
         });
     }
 
@@ -56,7 +57,22 @@ export abstract class SearchableRepository<TQuery, TModel, TId = string> extends
 
     @bind protected resolveEntities(query: TQuery): TModel[] {
         const { resultingIds } = this.stateByQuery.getState(query);
-        return Array.from(resultingIds.values()).map(id => this.entities.get(id)!);
+        return [...resultingIds].map(id => this.entities.get(id)!);
+    }
+
+    private callListenersByQuery(query: TQuery, error?: Error): void {
+        const key = JSON.stringify(query);
+        if (!this.listenersByQuery.has(key)) {
+            return;
+        }
+        this.listenersByQuery.get(key)!.forEach(({ resolve, reject }) => {
+            if (error) {
+                reject(error);
+            } else {
+                resolve();
+            }
+        });
+        this.listenersByQuery.delete(key);
     }
 
     @action.bound protected async loadByQuery(query: TQuery): Promise<void> {
@@ -74,14 +90,13 @@ export abstract class SearchableRepository<TQuery, TModel, TId = string> extends
                 entities.forEach(entity => this.add(entity));
                 const resultingIds = new Set(entities.map(entity => this.extractId(entity)));
                 this.stateByQuery.setState(query, { resultingIds });
-                if (this.listenersByQuery.has(query)) {
-                    this.listenersByQuery.get(query)!.forEach(({ resolve }) => resolve());
-                }
+                this.callListenersByQuery(query);
                 this.stateByQuery.setStatus(query, RequestStatus.DONE);
             });
         } catch (error) {
             this.stateByQuery.setStatus(query, RequestStatus.ERROR, error);
             this.errorListeners.forEach(callback => callback(error));
+            this.callListenersByQuery(query, error);
         }
     }
 }

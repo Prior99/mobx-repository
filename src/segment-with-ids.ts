@@ -1,12 +1,13 @@
 import { Segment, sortSegments } from "./segment";
 import { invariant } from "ts-invariant";
+import { bind } from "bind-decorator";
 
 export class SegmentWithIds<TId> extends Segment {
     constructor(offset: number, public readonly ids: Set<TId>) {
         super(offset, ids.size);
     }
 
-    public combine(other: SegmentWithIds<TId>): SegmentWithIds<TId> {
+    @bind public combine(other: SegmentWithIds<TId>): SegmentWithIds<TId> {
         if (this.offset === other.offset) {
             const ids = new Set([...this.ids, ...other.ids]);
             const expectedSize = Math.max(this.count, other.count);
@@ -24,7 +25,7 @@ export class SegmentWithIds<TId> extends Segment {
         return new SegmentWithIds(first.offset, ids);
     }
 
-    public intersect(intersection: Segment): SegmentWithIds<TId> | undefined {
+    @bind public intersect(intersection: Segment): SegmentWithIds<TId> | undefined {
         if (intersection.offset > this.end || intersection.end < this.offset) {
             return;
         }
