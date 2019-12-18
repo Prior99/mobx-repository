@@ -1,5 +1,6 @@
-import { PaginatedRepository, FetchByQueryResult, PaginationQuery } from "../src";
+import { PaginatedRepository, FetchByQueryResult } from "../src";
 import { autorun } from "mobx";
+import { Pagination } from "../src/pagination";
 
 describe("PaginatedRepository", () => {
     interface TestModel {
@@ -9,18 +10,18 @@ describe("PaginatedRepository", () => {
 
     interface TestQuery {
         search?: string;
-        count?: number;
+        length?: number;
     }
 
-    let spyFetchByQuery: jest.Mock<TestModel[], [TestQuery, PaginationQuery]>;
+    let spyFetchByQuery: jest.Mock<TestModel[], [TestQuery, Pagination]>;
     let repository: TestRepository;
     let query: TestQuery;
-    let pagination: PaginationQuery;
+    let pagination: Pagination;
 
     class TestRepository extends PaginatedRepository<TestQuery, TestModel> {
         protected async fetchByQuery(
             query: TestQuery,
-            pagination: PaginationQuery,
+            pagination: Pagination,
         ): Promise<FetchByQueryResult<TestModel>> {
             return { entities: spyFetchByQuery(query, pagination) };
         }
@@ -35,8 +36,8 @@ describe("PaginatedRepository", () => {
     }
 
     beforeEach(() => {
-        query = { count: 5, search: "some" };
-        pagination = { offset: 1, pageSize: 2 };
+        query = { length: 5, search: "some" };
+        pagination = { offset: 1, count: 2 };
         spyFetchByQuery = jest.fn();
         repository = new TestRepository();
     });
@@ -44,12 +45,12 @@ describe("PaginatedRepository", () => {
     describe("with the loading function returning some result", () => {
         beforeEach(() =>
             spyFetchByQuery.mockImplementation(
-                ({ count, search }: TestQuery, { offset, pageSize }: PaginationQuery) => {
+                ({ length, search }: TestQuery, { offset, count }: Pagination) => {
                     const result: TestModel[] = [];
-                    for (let i = 0; i < (count === undefined ? 1 : count); ++i) {
+                    for (let i = 0; i < (count === undefined ? 1 : length); ++i) {
                         result.push({ id: `id-${i}`, value: `value-${search}-${i}` });
                     }
-                    return result.slice(offset, offset + pageSize);
+                    return result.slice(offset, offset + count);
                 },
             ),
         );
@@ -65,7 +66,7 @@ describe("PaginatedRepository", () => {
                 it("calls `fetchByQuery` with the query", () =>
                     expect(spyFetchByQuery).toBeCalledWith(query, {
                         offset: 0,
-                        pageSize: 10,
+                        count: 10,
                     }));
 
                 it("calls `fetchByQuery` once", () => expect(spyFetchByQuery).toBeCalledTimes(1));
@@ -77,10 +78,10 @@ describe("PaginatedRepository", () => {
 
                     autorun(reaction => {
                         const result = repository.byQuery(
-                            { count: 5, search: "some" },
+                            { length: 5, search: "some" },
                             {
                                 offset: 0,
-                                pageSize: 2,
+                                count: 2,
                             },
                         );
                         if (calls++ === 0) {

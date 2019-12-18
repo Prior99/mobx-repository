@@ -56,38 +56,9 @@ export abstract class PaginatedRepository<TQuery, TModel, TId = string> extends 
     }
 
     @action.bound protected async loadByQuery(
-        query: TQuery,
-        pagination: Pagination = { offset: 0, count: this.defaultCount },
+        _query: TQuery,
+        _pagination: Pagination = { offset: 0, count: this.defaultCount },
     ): Promise<void> {
-        const { offset, count } = pagination;
-        const { offsetLoaded, resultingIds, paginationCompleted } = this.stateByQuery.getState(query);
-        if (offset < offsetLoaded || paginationCompleted) {
-            return;
-        }
-        if (this.stateByQuery.isStatus(query, RequestStatus.IN_PROGRESS, RequestStatus.ERROR)) {
-            await this.waitForQuery(query);
-            return;
-        }
-        this.stateByQuery.setStatus(query, RequestStatus.IN_PROGRESS);
-        try {
-            const { entities } = await this.fetchByQuery(query, {
-                offset,
-                count,
-            });
-            entities.forEach(entity => this.add(entity));
-            entities.map(entity => this.extractId(entity)).forEach(id => resultingIds.add(id));
-            this.stateByQuery.setState(query, {
-                resultingIds,
-                paginationCompleted: entities.length === 0,
-                offsetLoaded: offset + entities.length,
-            });
-            const listeners = this.listenersByQuery.get(query);
-            if (listeners) {
-                listeners.forEach(({ resolve }) => resolve());
-            }
-            this.stateByQuery.setStatus(query, RequestStatus.DONE);
-        } catch (error) {
-            this.stateByQuery.setStatus(query, RequestStatus.ERROR, error);
-        }
+        throw new Error();
     }
 }

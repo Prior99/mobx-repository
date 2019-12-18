@@ -4,6 +4,8 @@
         "module": "commonjs",
         "declaration": true,
         "noImplicitAny": true,
+        "noImplicitThis": true,
+        "alwaysStrict": true,
         "experimentalDecorators": true,
         "sourceMap": true,
         "outDir": "dist"
