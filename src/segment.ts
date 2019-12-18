@@ -1,6 +1,6 @@
-import { invariant } from "ts-invariant";
+import { Pagination } from "./pagination";
 
-export class Segment {
+export class Segment implements Pagination {
     constructor(public readonly offset: number, public readonly count: number) { }
 
     public overlaps(other: Segment): boolean {

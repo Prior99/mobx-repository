@@ -2,28 +2,22 @@ import { RequestStatus, RequestState } from "./request-state";
 import { SearchableRepository, FetchByQueryResult, StateSearchable } from "./searchable-repository";
 import { action } from "mobx";
 import bind from "bind-decorator";
-
-export interface PaginationQuery {
-    offset: number;
-    pageSize?: number;
-}
+import { PaginationRange } from "./pagination-range";
+import { PaginatedSearchable } from "./paginated-searchable";
 
 export interface StatePaginated<TId> extends StateSearchable<TId> {
-    offsetLoaded: number;
     paginationCompleted: boolean;
-    total?: number;
+    paginationRange: PaginationRange<TId>;
 }
 
 export interface PaginatedFetchByQueryResult<TModel> extends FetchByQueryResult<TModel> {
     entities: TModel[];
-    total?: number;
 }
 
-export abstract class PaginatedRepository<TQuery, TModel, TId = string> extends SearchableRepository<TQuery, TModel, TId> {
+export abstract class PaginatedRepository<TQuery, TModel, TId = string> implements PaginatedSearchable<TQuery, TModel> {
     protected stateByQuery = new RequestState<StatePaginated<TId>>(() => ({
-        offsetLoaded: 0,
         paginationCompleted: false,
-        resultingIds: new Set(),
+        paginationRange: new PaginationRange(),
     }));
     protected defaultPageSize = 10;
 
