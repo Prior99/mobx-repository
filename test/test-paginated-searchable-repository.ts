@@ -3,7 +3,7 @@ import { autorun } from "mobx";
 import { Pagination, PaginatedSearchableRepository, FetchByQueryResult } from "../src";
 
 describe("PaginatedSearchableRepository", () => {
-    interface TestModel {
+    interface TestEntity {
         id: string;
         value: string;
     }
@@ -13,23 +13,23 @@ describe("PaginatedSearchableRepository", () => {
         length?: number;
     }
 
-    let spyFetchByQuery: jest.Mock<TestModel[], [TestQuery, Pagination]>;
+    let spyFetchByQuery: jest.Mock<TestEntity[], [TestQuery, Pagination]>;
     let repository: TestRepository;
     let query: TestQuery;
     let hugeQuery: TestQuery;
     let pagination: Pagination;
 
-    class TestRepository extends PaginatedSearchableRepository<TestQuery, TestModel> {
-        protected async fetchByQuery(query: TestQuery, pagination: Pagination): Promise<FetchByQueryResult<TestModel>> {
+    class TestRepository extends PaginatedSearchableRepository<TestQuery, TestEntity> {
+        protected async fetchByQuery(query: TestQuery, pagination: Pagination): Promise<FetchByQueryResult<TestEntity>> {
             return { entities: spyFetchByQuery(query, pagination) };
         }
 
-        protected async fetchById(): Promise<TestModel> {
+        protected async fetchById(): Promise<TestEntity> {
             throw new Error("Should not be reached.");
         }
 
-        protected extractId(model: TestModel): string {
-            return model.id;
+        protected extractId(entity: TestEntity): string {
+            return entity.id;
         }
     }
 
@@ -44,7 +44,7 @@ describe("PaginatedSearchableRepository", () => {
     describe("with the loading function returning some result", () => {
         beforeEach(() =>
             spyFetchByQuery.mockImplementation(({ length, search }: TestQuery, { offset, count }: Pagination) => {
-                const result: TestModel[] = [];
+                const result: TestEntity[] = [];
                 for (let i = 0; i < (count === undefined ? 1 : length); ++i) {
                     result.push({ id: `id-${i}`, value: `value-${search}-${i}` });
                 }
@@ -54,7 +54,7 @@ describe("PaginatedSearchableRepository", () => {
 
         describe("`byQuery`", () => {
             describe("first call", () => {
-                let returnValue: TestModel[];
+                let returnValue: TestEntity[];
 
                 beforeEach(() => (returnValue = repository.byQuery(query)));
 
@@ -112,7 +112,7 @@ describe("PaginatedSearchableRepository", () => {
             });
 
             describe("after loading a partially loaded included range", () => {
-                let returnValue: TestModel[];
+                let returnValue: TestEntity[];
 
                 beforeEach(async () => {
                     spyFetchByQuery.mockClear();
@@ -136,7 +136,7 @@ describe("PaginatedSearchableRepository", () => {
             });
 
             describe("after loading a surrounding range", () => {
-                let returnValue: TestModel[];
+                let returnValue: TestEntity[];
 
                 beforeEach(async () => {
                     returnValue = await repository.byQueryAsync(hugeQuery, { offset: 25, count: 75 });
@@ -163,7 +163,7 @@ describe("PaginatedSearchableRepository", () => {
         });
 
         describe("`byQueryAsync`", () => {
-            let returnValue: TestModel[];
+            let returnValue: TestEntity[];
 
             beforeEach(async () => {
                 returnValue = await repository.byQueryAsync(query, pagination);
@@ -180,7 +180,7 @@ describe("PaginatedSearchableRepository", () => {
             it("calls `fetchByQuery` once", () => expect(spyFetchByQuery).toBeCalledTimes(1));
 
             describe("consecutive calls to `byQuery` with same pagination", () => {
-                let nextReturnValue: TestModel[];
+                let nextReturnValue: TestEntity[];
 
                 beforeEach(() => (nextReturnValue = repository.byQuery(query, pagination)));
 
@@ -194,7 +194,7 @@ describe("PaginatedSearchableRepository", () => {
             });
 
             describe("consecutive calls to `byQueryAsync` with same pagination", () => {
-                let nextReturnValue: TestModel[];
+                let nextReturnValue: TestEntity[];
 
                 beforeEach(async () => (nextReturnValue = await repository.byQueryAsync(query, pagination)));
 
@@ -211,7 +211,7 @@ describe("PaginatedSearchableRepository", () => {
                 beforeEach(() => repository.reset());
 
                 describe("calls to `byQuery`", () => {
-                    let nextReturnValue: TestModel[];
+                    let nextReturnValue: TestEntity[];
 
                     beforeEach(() => (nextReturnValue = repository.byQuery(query)));
 
@@ -221,7 +221,7 @@ describe("PaginatedSearchableRepository", () => {
                 });
 
                 describe("calls to `byQueryAsync`", () => {
-                    let nextReturnValue: TestModel[];
+                    let nextReturnValue: TestEntity[];
 
                     beforeEach(async () => (nextReturnValue = await repository.byQueryAsync(query, pagination)));
 
@@ -239,7 +239,7 @@ describe("PaginatedSearchableRepository", () => {
                 beforeEach(() => repository.evict("id-2"));
 
                 describe("calls to `byQueryAsync`", () => {
-                    let nextReturnValue: TestModel[];
+                    let nextReturnValue: TestEntity[];
 
                     beforeEach(async () => (nextReturnValue = await repository.byQueryAsync(query, pagination)));
 

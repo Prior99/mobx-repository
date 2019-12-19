@@ -9,31 +9,31 @@ export interface StateSearchable<TId> {
     resultingIds: Set<TId>;
 }
 
-export interface FetchByQueryResult<TModel> {
-    entities: TModel[];
+export interface FetchByQueryResult<TEntity> {
+    entities: TEntity[];
 }
 
-export interface Searchable<TQuery, TModel> {
-    byQuery(query: TQuery): TModel[];
-    byQueryAsync(query: TQuery): Promise<TModel[]>;
+export interface Searchable<TQuery, TEntity> {
+    byQuery(query: TQuery): TEntity[];
+    byQueryAsync(query: TQuery): Promise<TEntity[]>;
     waitForQuery(query: TQuery): Promise<void>;
 }
 
-export abstract class SearchableRepository<TQuery, TModel, TId = string> extends IndexableRepository<TModel, TId>
-    implements Searchable<TQuery, TModel> {
+export abstract class SearchableRepository<TQuery, TEntity, TId = string> extends IndexableRepository<TEntity, TId>
+    implements Searchable<TQuery, TEntity> {
     protected stateByQuery = new RequestState<TQuery, StateSearchable<TId>>(() => ({
         resultingIds: new Set(),
     }));
     protected listenersByQuery = new Map<string, Listener[]>();
 
-    protected abstract async fetchByQuery(query: TQuery): Promise<FetchByQueryResult<TModel>>;
+    protected abstract async fetchByQuery(query: TQuery): Promise<FetchByQueryResult<TEntity>>;
 
-    @bind public byQuery(query: TQuery): TModel[] {
+    @bind public byQuery(query: TQuery): TEntity[] {
         this.loadByQuery(query);
         return this.resolveEntities(query);
     }
 
-    @bind public async byQueryAsync(query: TQuery): Promise<TModel[]> {
+    @bind public async byQueryAsync(query: TQuery): Promise<TEntity[]> {
         await this.loadByQuery(query);
         return this.resolveEntities(query);
     }
@@ -66,7 +66,7 @@ export abstract class SearchableRepository<TQuery, TModel, TId = string> extends
         this.stateByQuery.reset();
     }
 
-    @bind protected resolveEntities(query: TQuery): TModel[] {
+    @bind protected resolveEntities(query: TQuery): TEntity[] {
         const { resultingIds } = this.stateByQuery.getState(query);
         return [...resultingIds].map(id => this.entities.get(id)!);
     }

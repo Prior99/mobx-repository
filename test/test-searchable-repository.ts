@@ -3,7 +3,7 @@ import { autorun } from "mobx";
 import { SearchableRepository, FetchByQueryResult } from "../src";
 
 describe("SearchableRepository", () => {
-    interface TestModel {
+    interface TestEntity {
         id: string;
         value: string;
     }
@@ -13,21 +13,21 @@ describe("SearchableRepository", () => {
         count?: number;
     }
 
-    let spyFetchByQuery: jest.Mock<TestModel[], [TestQuery]>;
+    let spyFetchByQuery: jest.Mock<TestEntity[], [TestQuery]>;
     let repository: TestRepository;
     let query: TestQuery;
 
-    class TestRepository extends SearchableRepository<TestQuery, TestModel> {
-        protected async fetchByQuery(query: TestQuery): Promise<FetchByQueryResult<TestModel>> {
+    class TestRepository extends SearchableRepository<TestQuery, TestEntity> {
+        protected async fetchByQuery(query: TestQuery): Promise<FetchByQueryResult<TestEntity>> {
             return { entities: spyFetchByQuery(query) };
         }
 
-        protected async fetchById(): Promise<TestModel> {
+        protected async fetchById(): Promise<TestEntity> {
             throw new Error("Should not be reached.");
         }
 
-        protected extractId(model: TestModel): string {
-            return model.id;
+        protected extractId(entity: TestEntity): string {
+            return entity.id;
         }
     }
 
@@ -40,7 +40,7 @@ describe("SearchableRepository", () => {
     describe("with the loading function returning some result", () => {
         beforeEach(() =>
             spyFetchByQuery.mockImplementation(({ count, search }: TestQuery) => {
-                const result: TestModel[] = [];
+                const result: TestEntity[] = [];
                 for (let i = 0; i < (count === undefined ? 1 : count); ++i) {
                     result.push({ id: `id-${i}`, value: `value-${search}-${i}` });
                 }
@@ -50,7 +50,7 @@ describe("SearchableRepository", () => {
 
         describe("`byQuery`", () => {
             describe("first call", () => {
-                let returnValue: TestModel[];
+                let returnValue: TestEntity[];
 
                 beforeEach(() => (returnValue = repository.byQuery(query)));
 
@@ -134,7 +134,7 @@ describe("SearchableRepository", () => {
         });
 
         describe("invoking `byQueryAsync` during `byQuery`", () => {
-            let byQueryAsyncReturnValue: TestModel[];
+            let byQueryAsyncReturnValue: TestEntity[];
 
             beforeEach(async () => {
                 query = { count: 2, search: "some" };
@@ -152,7 +152,7 @@ describe("SearchableRepository", () => {
         });
 
         describe("`byQueryAsync`", () => {
-            let returnValue: TestModel[];
+            let returnValue: TestEntity[];
 
             beforeEach(async () => {
                 returnValue = await repository.byQueryAsync(query);
@@ -169,7 +169,7 @@ describe("SearchableRepository", () => {
             it("calls `fetchByQuery` once", () => expect(spyFetchByQuery).toBeCalledTimes(1));
 
             describe("consecutive calls to `byQuery`", () => {
-                let nextReturnValue: TestModel[];
+                let nextReturnValue: TestEntity[];
 
                 beforeEach(() => (nextReturnValue = repository.byQuery(query)));
 
@@ -183,7 +183,7 @@ describe("SearchableRepository", () => {
             });
 
             describe("consecutive calls to `byQueryAsync`", () => {
-                let nextReturnValue: TestModel[];
+                let nextReturnValue: TestEntity[];
 
                 beforeEach(async () => (nextReturnValue = await repository.byQueryAsync(query)));
 
@@ -200,7 +200,7 @@ describe("SearchableRepository", () => {
                 beforeEach(() => repository.reset());
 
                 describe("calls to `byQuery`", () => {
-                    let nextReturnValue: TestModel[];
+                    let nextReturnValue: TestEntity[];
 
                     beforeEach(() => (nextReturnValue = repository.byQuery(query)));
 
@@ -210,7 +210,7 @@ describe("SearchableRepository", () => {
                 });
 
                 describe("calls to `byQueryAsync`", () => {
-                    let nextReturnValue: TestModel[];
+                    let nextReturnValue: TestEntity[];
 
                     beforeEach(async () => (nextReturnValue = await repository.byQueryAsync(query)));
 
@@ -228,7 +228,7 @@ describe("SearchableRepository", () => {
                 beforeEach(() => repository.evict("id-1190"));
 
                 describe("calls to `byQuery`", () => {
-                    let nextReturnValue: TestModel[];
+                    let nextReturnValue: TestEntity[];
 
                     beforeEach(() => (nextReturnValue = repository.byQuery(query)));
 
@@ -242,7 +242,7 @@ describe("SearchableRepository", () => {
                 });
 
                 describe("calls to `byQueryAsync`", () => {
-                    let nextReturnValue: TestModel[];
+                    let nextReturnValue: TestEntity[];
 
                     beforeEach(async () => (nextReturnValue = await repository.byQueryAsync(query)));
 
@@ -260,7 +260,7 @@ describe("SearchableRepository", () => {
                 beforeEach(() => repository.evict("id-0"));
 
                 describe("calls to `byQuery`", () => {
-                    let nextReturnValue: TestModel[];
+                    let nextReturnValue: TestEntity[];
 
                     beforeEach(() => (nextReturnValue = repository.byQuery(query)));
 
@@ -270,7 +270,7 @@ describe("SearchableRepository", () => {
                 });
 
                 describe("calls to `byQueryAsync`", () => {
-                    let nextReturnValue: TestModel[];
+                    let nextReturnValue: TestEntity[];
 
                     beforeEach(async () => (nextReturnValue = await repository.byQueryAsync(query)));
 

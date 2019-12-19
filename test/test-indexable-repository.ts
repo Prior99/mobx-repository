@@ -3,21 +3,21 @@ import { autorun } from "mobx";
 import { IndexableRepository } from "../src";
 
 describe("IndexableRepository", () => {
-    interface TestModel {
+    interface TestEntity {
         id: string;
         value: string;
     }
 
-    let spyFetchById: jest.Mock<TestModel, [string]>;
+    let spyFetchById: jest.Mock<TestEntity, [string]>;
     let repository: TestRepository;
 
-    class TestRepository extends IndexableRepository<TestModel> {
-        protected async fetchById(id: string): Promise<TestModel> {
+    class TestRepository extends IndexableRepository<TestEntity> {
+        protected async fetchById(id: string): Promise<TestEntity> {
             return spyFetchById(id);
         }
 
-        protected extractId(model: TestModel): string {
-            return model.id;
+        protected extractId(entity: TestEntity): string {
+            return entity.id;
         }
     }
 
@@ -82,7 +82,7 @@ describe("IndexableRepository", () => {
 
         describe("`byIdAsync`", () => {
             describe("first call", () => {
-                let returnValue: TestModel | undefined;
+                let returnValue: TestEntity | undefined;
 
                 beforeEach(async () => (returnValue = await repository.byIdAsync("some")));
 
@@ -107,7 +107,7 @@ describe("IndexableRepository", () => {
             });
 
             describe("`byIdAsync`", () => {
-                let returnValue: TestModel | undefined;
+                let returnValue: TestEntity | undefined;
 
                 beforeEach(async () => (returnValue = await repository.byIdAsync("some")));
 
@@ -123,7 +123,7 @@ describe("IndexableRepository", () => {
 
         describe("`byId`", () => {
             describe("first call", () => {
-                let returnValue: TestModel | undefined;
+                let returnValue: TestEntity | undefined;
 
                 beforeEach(() => (returnValue = repository.byId("some")));
 
@@ -174,7 +174,7 @@ describe("IndexableRepository", () => {
         });
 
         describe("invoking `byIdAsync` during `byId`", () => {
-            let byIdAsyncReturnValue: TestModel | undefined;
+            let byIdAsyncReturnValue: TestEntity | undefined;
 
             beforeEach(async () => {
                 repository.byId("some");
@@ -191,7 +191,7 @@ describe("IndexableRepository", () => {
         });
 
         describe("`byIdAsync`", () => {
-            let returnValue: TestModel | undefined;
+            let returnValue: TestEntity | undefined;
 
             beforeEach(async () => (returnValue = await repository.byIdAsync("some")));
 
@@ -206,7 +206,7 @@ describe("IndexableRepository", () => {
             it("calls `fetchById` once", () => expect(spyFetchById).toBeCalledTimes(1));
 
             describe("consecutive calls to `byId`", () => {
-                let nextReturnValue: TestModel | undefined;
+                let nextReturnValue: TestEntity | undefined;
 
                 beforeEach(() => (nextReturnValue = repository.byId("some")));
 
@@ -232,7 +232,7 @@ describe("IndexableRepository", () => {
             });
 
             describe("consecutive calls to `byIdAsync`", () => {
-                let nextReturnValue: TestModel | undefined;
+                let nextReturnValue: TestEntity | undefined;
 
                 beforeEach(async () => (nextReturnValue = await repository.byIdAsync("some")));
 
@@ -249,7 +249,7 @@ describe("IndexableRepository", () => {
                 beforeEach(() => repository.reset());
 
                 describe("calls to `byId`", () => {
-                    let nextReturnValue: TestModel | undefined;
+                    let nextReturnValue: TestEntity | undefined;
 
                     beforeEach(() => (nextReturnValue = repository.byId("some")));
 
@@ -259,7 +259,7 @@ describe("IndexableRepository", () => {
                 });
 
                 describe("calls to `byIdAsync`", () => {
-                    let nextReturnValue: TestModel | undefined;
+                    let nextReturnValue: TestEntity | undefined;
 
                     beforeEach(async () => (nextReturnValue = await repository.byIdAsync("some")));
 
@@ -277,7 +277,7 @@ describe("IndexableRepository", () => {
                 beforeEach(() => repository.evict("some"));
 
                 describe("calls to `byId`", () => {
-                    let nextReturnValue: TestModel | undefined;
+                    let nextReturnValue: TestEntity | undefined;
 
                     beforeEach(() => (nextReturnValue = repository.byId("some")));
 
@@ -287,7 +287,7 @@ describe("IndexableRepository", () => {
                 });
 
                 describe("calls to `byIdAsync`", () => {
-                    let nextReturnValue: TestModel | undefined;
+                    let nextReturnValue: TestEntity | undefined;
 
                     beforeEach(async () => (nextReturnValue = await repository.byIdAsync("some")));
 
@@ -303,7 +303,7 @@ describe("IndexableRepository", () => {
         });
 
         describe("evicting the entity during `byIdAsync` during `byId`", () => {
-            let byIdAsyncPromise: Promise<TestModel | undefined>;
+            let byIdAsyncPromise: Promise<TestEntity | undefined>;
 
             beforeEach(() => {
                 repository.byId("some");
@@ -315,7 +315,7 @@ describe("IndexableRepository", () => {
         });
 
         describe("invoking `reset` during `byIdAsync` during `byId`", () => {
-            let byIdAsyncPromise: Promise<TestModel | undefined>;
+            let byIdAsyncPromise: Promise<TestEntity | undefined>;
 
             beforeEach(() => {
                 repository.byId("some");

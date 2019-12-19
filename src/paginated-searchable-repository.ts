@@ -11,9 +11,9 @@ import { PaginationState } from "./pagination-state";
 import { Segment } from "./segment";
 import { SegmentWithIds } from "./segment-with-ids";
 
-export interface PaginatedSearchable<TQuery, TModel> extends Searchable<TQuery, TModel> {
-    byQuery(query: TQuery, pagination?: Pagination): TModel[];
-    byQueryAsync(query: TQuery, pagination?: Pagination): Promise<TModel[]>;
+export interface PaginatedSearchable<TQuery, TEntity> extends Searchable<TQuery, TEntity> {
+    byQuery(query: TQuery, pagination?: Pagination): TEntity[];
+    byQueryAsync(query: TQuery, pagination?: Pagination): Promise<TEntity[]>;
 }
 
 export interface ListenerSpecification<TQuery> {
@@ -22,8 +22,8 @@ export interface ListenerSpecification<TQuery> {
     listener: Listener;
 }
 
-export abstract class PaginatedSearchableRepository<TQuery, TModel, TId = string> extends IndexableRepository<TModel, TId>
-    implements PaginatedSearchable<TQuery, TModel> {
+export abstract class PaginatedSearchableRepository<TQuery, TEntity, TId = string> extends IndexableRepository<TEntity, TId>
+    implements PaginatedSearchable<TQuery, TEntity> {
     protected stateByQuery = new RequestState<TQuery, PaginationState<TId>>(() => new PaginationState());
     protected listenersByQuery = new Set<ListenerSpecification<TQuery>>();
     protected defaultCount = 10;
@@ -36,14 +36,14 @@ export abstract class PaginatedSearchableRepository<TQuery, TModel, TId = string
         return { ...this.defaultPagination, ...partialPagination };
     }
 
-    protected abstract async fetchByQuery(query: TQuery, segment: Segment): Promise<FetchByQueryResult<TModel>>;
+    protected abstract async fetchByQuery(query: TQuery, segment: Segment): Promise<FetchByQueryResult<TEntity>>;
 
-    @bind public byQuery(query: TQuery, pagination: Partial<Pagination> = {}): TModel[] {
+    @bind public byQuery(query: TQuery, pagination: Partial<Pagination> = {}): TEntity[] {
         this.loadByQuery(query, pagination);
         return this.resolveEntities(query, pagination);
     }
 
-    @bind public async byQueryAsync(query: TQuery, pagination: Partial<Pagination> = {}): Promise<TModel[]> {
+    @bind public async byQueryAsync(query: TQuery, pagination: Partial<Pagination> = {}): Promise<TEntity[]> {
         await this.loadByQuery(query, pagination);
         return this.resolveEntities(query, pagination);
     }
@@ -56,7 +56,7 @@ export abstract class PaginatedSearchableRepository<TQuery, TModel, TId = string
         });
     }
 
-    @bind protected resolveEntities(query: TQuery, partialPagination: Partial<Pagination>): TModel[] {
+    @bind protected resolveEntities(query: TQuery, partialPagination: Partial<Pagination>): TEntity[] {
         const pagination = this.completePagination(partialPagination);
         const { paginationRange } = this.stateByQuery.getState(query);
         return [...paginationRange.getIds(pagination)].map(id => this.entities.get(id)!);
@@ -130,7 +130,7 @@ export abstract class PaginatedSearchableRepository<TQuery, TModel, TId = string
     @action.bound private async loadIndividualRange(
         query: TQuery,
         segment: Segment,
-    ): Promise<FetchByQueryResult<TModel>> {
+    ): Promise<FetchByQueryResult<TEntity>> {
         const result = await this.fetchByQuery(query, segment);
         transaction(() => {
             result.entities.forEach(entity => this.add(entity));

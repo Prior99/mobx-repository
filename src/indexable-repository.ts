@@ -5,28 +5,28 @@ import { RequestStatus, RequestState } from "./request-state";
 import { Listener, ErrorListener } from "./listener";
 import { Repository } from "./repository";
 
-export interface Indexable<TModel, TId = string> {
-    byId(id: TId): TModel | undefined;
-    byIdAsync(id: TId): Promise<TModel | undefined>;
+export interface Indexable<TEntity, TId = string> {
+    byId(id: TId): TEntity | undefined;
+    byIdAsync(id: TId): Promise<TEntity | undefined>;
     waitForId(id: TId): Promise<void>;
     isLoaded(id: TId): boolean;
     isKnown(id: TId): boolean;
-    add(model: TModel): void;
+    add(entity: TEntity): void;
     evict(id: TId): void;
-    reloadId(id: TId): Promise<TModel>;
+    reloadId(id: TId): Promise<TEntity>;
 }
 
-export abstract class IndexableRepository<TModel, TId = string> implements Indexable<TModel, TId>, Repository {
-    @observable protected entities = new Map<TId, TModel>();
+export abstract class IndexableRepository<TEntity, TId = string> implements Indexable<TEntity, TId>, Repository {
+    @observable protected entities = new Map<TId, TEntity>();
     protected stateById = new RequestState<TId>();
     protected listenersById = new Map<TId, Listener[]>();
     protected errorListeners = new Set<ErrorListener>();
 
-    protected abstract fetchById(id: TId): Promise<TModel>;
+    protected abstract fetchById(id: TId): Promise<TEntity>;
 
-    protected abstract extractId(model: TModel): TId;
+    protected abstract extractId(entity: TEntity): TId;
 
-    @bind public byId(id: TId): TModel | undefined {
+    @bind public byId(id: TId): TEntity | undefined {
         this.loadById(id);
         return this.entities.get(id);
     }
@@ -39,7 +39,7 @@ export abstract class IndexableRepository<TModel, TId = string> implements Index
         this.errorListeners.delete(listener);
     }
 
-    @bind public async byIdAsync(id: TId): Promise<TModel | undefined> {
+    @bind public async byIdAsync(id: TId): Promise<TEntity | undefined> {
         await this.loadById(id);
         return this.entities.get(id);
     }
@@ -67,8 +67,8 @@ export abstract class IndexableRepository<TModel, TId = string> implements Index
         );
     }
 
-    @action.bound public add(model: TModel): void {
-        this.entities.set(this.extractId(model), model);
+    @action.bound public add(entity: TEntity): void {
+        this.entities.set(this.extractId(entity), entity);
     }
 
     @action.bound public reset(): void {
@@ -86,7 +86,7 @@ export abstract class IndexableRepository<TModel, TId = string> implements Index
         this.stateById.delete(id);
     }
 
-    @action.bound public async reloadId(id: TId): Promise<TModel> {
+    @action.bound public async reloadId(id: TId): Promise<TEntity> {
         this.evict(id);
         return await this.byIdAsync(id);
     }
