@@ -82,3 +82,17 @@ export class GithubRepositoryList extends React.Component {
 
 render(<GithubRepositoryList />, document.getElementById("app"));
 ```
+
+## Contributing
+
+Yarn is used as package manager.
+
+* Install dependencies: `yarn`
+* Build: `yarn build`
+* Test: `yarn test`
+* Lint: `yarn lint`
+* Build the docs: `yarn docs`
+
+## Contributors
+
+* Frederick Gnodtke (Prior99)
