@@ -1,7 +1,8 @@
-import { BasicRepository } from "../src";
 import { autorun } from "mobx";
 
-describe("BasicRepository", () => {
+import { IndexableRepository } from "../src";
+
+describe("IndexableRepository", () => {
     interface TestModel {
         id: string;
         value: string;
@@ -10,7 +11,7 @@ describe("BasicRepository", () => {
     let spyFetchById: jest.Mock<TestModel, [string]>;
     let repository: TestRepository;
 
-    class TestRepository extends BasicRepository<TestModel> {
+    class TestRepository extends IndexableRepository<TestModel> {
         protected async fetchById(id: string): Promise<TestModel> {
             return spyFetchById(id);
         }

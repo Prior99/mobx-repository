@@ -1,9 +1,9 @@
-import { BasicRepository } from "./basic-repository";
-import { Listener } from "./listener";
-import { RequestStatus, RequestState } from "./request-state";
 import { action, transaction } from "mobx";
 import { bind } from "bind-decorator";
-import { Searchable } from "./searchable";
+
+import { IndexableRepository } from "./indexable-repository";
+import { Listener } from "./listener";
+import { RequestStatus, RequestState } from "./request-state";
 
 export interface StateSearchable<TId> {
     resultingIds: Set<TId>;
@@ -13,7 +13,13 @@ export interface FetchByQueryResult<TModel> {
     entities: TModel[];
 }
 
-export abstract class SearchableRepository<TQuery, TModel, TId = string> extends BasicRepository<TModel, TId>
+export interface Searchable<TQuery, TModel> {
+    byQuery(query: TQuery): TModel[];
+    byQueryAsync(query: TQuery): Promise<TModel[]>;
+    waitForQuery(query: TQuery): Promise<void>;
+}
+
+export abstract class SearchableRepository<TQuery, TModel, TId = string> extends IndexableRepository<TModel, TId>
     implements Searchable<TQuery, TModel> {
     protected stateByQuery = new RequestState<TQuery, StateSearchable<TId>>(() => ({
         resultingIds: new Set(),

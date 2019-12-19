@@ -1,31 +1,32 @@
-import { Segment, sortSegments } from "./segment";
-import { invariant } from "ts-invariant";
 import { bind } from "bind-decorator";
+
+import { Segment, sortSegments } from "./segment";
 
 export class SegmentWithIds<TId> extends Segment {
     constructor(offset: number, public readonly ids: Set<TId>) {
-        super(offset, ids.size);
+        super(offset);
     }
 
     @bind public hasId(id: TId): boolean {
         return this.ids.has(id);
     }
 
+    public get count(): number {
+        return this.ids.size;
+    }
+
     @bind public combine(other: SegmentWithIds<TId>): SegmentWithIds<TId> {
         if (this.offset === other.offset) {
             const ids = new Set([...this.ids, ...other.ids]);
-            const expectedSize = Math.max(this.count, other.count);
-            invariant(
-                ids.size === expectedSize,
-                `Invalid number of ids after combining: ${ids.size} !== ${expectedSize}`,
-            );
             return new SegmentWithIds(this.offset, ids);
         }
         const [first, second] = sortSegments([this, other]);
         const ids = new Set([...first.ids, ...second.ids]);
         const overlapAmount = first.end >= second.end ? second.count : first.end - second.offset;
         const expectedSize = first.count + second.count - overlapAmount;
-        invariant(ids.size === expectedSize, `Invalid number of ids after combining: ${ids.size} !== ${expectedSize}`);
+        if (ids.size !== expectedSize) {
+            throw new Error(`Invalid number of ids after combining: ${ids.size} !== ${expectedSize}`);
+        }
         return new SegmentWithIds(first.offset, ids);
     }
 
@@ -36,20 +37,17 @@ export class SegmentWithIds<TId> extends Segment {
         if (this.offset === intersection.offset) {
             const count = Math.min(this.count, intersection.count);
             const ids = new Set([...this.ids].slice(0, count));
-            invariant(ids.size === count, `Invalid number of ids after intersecting: ${ids.size} !== ${count}.`);
             return new SegmentWithIds(this.offset, ids);
         }
         if (this.offset > intersection.offset) {
             const count = Math.min(intersection.end - this.offset, this.count);
             const ids = new Set([...this.ids].slice(0, count));
-            invariant(ids.size === count, `Invalid number of ids after intersecting: ${ids.size} !== ${count}`);
             return new SegmentWithIds(this.offset, ids);
         }
         // Hence, this condition must be true: `this.offset < intersection.offset`.
         const count = Math.min(this.end - intersection.offset, intersection.count);
         const idStartIndex = intersection.offset - this.offset;
         const ids = new Set([...this.ids].slice(idStartIndex, idStartIndex + count));
-        invariant(ids.size === count, `Invalid number of ids after intersecting: ${ids.size} !== ${count}`);
         return new SegmentWithIds(intersection.offset, ids);
     }
 }

@@ -1,9 +1,22 @@
 import { observable, action } from "mobx";
+import { bind } from "bind-decorator";
+
 import { RequestStatus, RequestState } from "./request-state";
 import { Listener, ErrorListener } from "./listener";
-import bind from "bind-decorator";
+import { Repository } from "./repository";
 
-export abstract class BasicRepository<TModel, TId = string> {
+export interface Indexable<TModel, TId = string> {
+    byId(id: TId): TModel | undefined;
+    byIdAsync(id: TId): Promise<TModel | undefined>;
+    waitForId(id: TId): Promise<void>;
+    isLoaded(id: TId): boolean;
+    isKnown(id: TId): boolean;
+    add(model: TModel): void;
+    evict(id: TId): void;
+    reloadId(id: TId): Promise<TModel>;
+}
+
+export abstract class IndexableRepository<TModel, TId = string> implements Indexable<TModel, TId>, Repository {
     @observable protected entities = new Map<TId, TModel>();
     protected stateById = new RequestState<TId>();
     protected listenersById = new Map<TId, Listener[]>();

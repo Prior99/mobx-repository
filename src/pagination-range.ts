@@ -1,5 +1,6 @@
-import { observable, action, computed } from "mobx";
 import bind from "bind-decorator";
+import { observable, action, computed } from "mobx";
+
 import { tidySegments, SegmentWithIds } from "./segment-with-ids";
 import { Segment } from "./segment";
 import { Pagination } from "./pagination";

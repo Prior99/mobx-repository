@@ -1,5 +1,5 @@
+import { bind } from "bind-decorator";
 import { observable } from "mobx";
-import bind from "bind-decorator";
 
 export const enum RequestStatus {
     IN_PROGRESS = "in progress",

@@ -1,8 +1,8 @@
-import { PaginatedRepository, FetchByQueryResult } from "../src";
 import { autorun } from "mobx";
-import { Pagination } from "../src/pagination";
 
-describe("PaginatedRepository", () => {
+import { Pagination, PaginatedSearchableRepository, FetchByQueryResult } from "../src";
+
+describe("PaginatedSearchableRepository", () => {
     interface TestModel {
         id: string;
         value: string;
@@ -19,7 +19,7 @@ describe("PaginatedRepository", () => {
     let hugeQuery: TestQuery;
     let pagination: Pagination;
 
-    class TestRepository extends PaginatedRepository<TestQuery, TestModel> {
+    class TestRepository extends PaginatedSearchableRepository<TestQuery, TestModel> {
         protected async fetchByQuery(query: TestQuery, pagination: Pagination): Promise<FetchByQueryResult<TestModel>> {
             return { entities: spyFetchByQuery(query, pagination) };
         }

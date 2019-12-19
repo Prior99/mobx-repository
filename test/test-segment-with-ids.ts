@@ -84,6 +84,12 @@ describe("SegmentWithIds", () => {
             },
         );
     });
+
+    it("throws an error if ids were overlapping", () => {
+        expect(() =>
+            new SegmentWithIds(3, new Set([103, 104, 105])).combine(new SegmentWithIds(6, new Set([104, 105, 106]))),
+        ).toThrowError();
+    });
 });
 
 describe("`tidySegments`", () => {

@@ -1,5 +1,6 @@
-import { Pagination } from "./pagination";
 import { bind } from "bind-decorator";
+
+import { Pagination } from "./pagination";
 
 export function sortSegments<T extends Segment>(segments: T[]): T[] {
     return [...segments].sort((a, b) => a.offset - b.offset);
@@ -10,14 +11,16 @@ export class Segment implements Pagination {
     public readonly count: number;
 
     constructor(pagination: Pagination);
-    constructor(offset: number, count: number);
+    constructor(offset: number, count?: number);
     constructor(arg1: Pagination | number, arg2?: number) {
         if (typeof arg1 === "object") {
             this.offset = arg1.offset;
             this.count = arg1.count;
         } else {
             this.offset = arg1;
-            this.count = arg2;
+            if (arg2 !== undefined) {
+                this.count = arg2;
+            }
         }
     }
 

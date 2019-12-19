@@ -1,6 +1,4 @@
-import { PaginationRange } from "../src/pagination-range";
-import { SegmentWithIds } from "../src/segment-with-ids";
-import { Segment } from "../src/segment";
+import { PaginationRange, SegmentWithIds, Segment } from "../src";
 
 describe("PaginationRange", () => {
     let range: PaginationRange<number>;

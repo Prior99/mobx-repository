@@ -1,15 +1,20 @@
-import { RequestState, RequestStatus } from "./request-state";
-import { FetchByQueryResult } from "./searchable-repository";
 import { action, transaction } from "mobx";
-import bind from "bind-decorator";
-import { PaginatedSearchable } from "./paginated-searchable";
-import { BasicRepository } from "./basic-repository";
+import { bind } from "bind-decorator";
+import deepEqual from "deep-equal";
+
+import { RequestState, RequestStatus } from "./request-state";
+import { FetchByQueryResult, Searchable } from "./searchable-repository";
+import { IndexableRepository } from "./indexable-repository";
 import { Pagination } from "./pagination";
 import { Listener } from "./listener";
 import { PaginationState } from "./pagination-state";
 import { Segment } from "./segment";
 import { SegmentWithIds } from "./segment-with-ids";
-import deepEqual from "deep-equal";
+
+export interface PaginatedSearchable<TQuery, TModel> extends Searchable<TQuery, TModel> {
+    byQuery(query: TQuery, pagination?: Pagination): TModel[];
+    byQueryAsync(query: TQuery, pagination?: Pagination): Promise<TModel[]>;
+}
 
 export interface ListenerSpecification<TQuery> {
     query: TQuery;
@@ -17,7 +22,7 @@ export interface ListenerSpecification<TQuery> {
     listener: Listener;
 }
 
-export abstract class PaginatedRepository<TQuery, TModel, TId = string> extends BasicRepository<TModel, TId>
+export abstract class PaginatedSearchableRepository<TQuery, TModel, TId = string> extends IndexableRepository<TModel, TId>
     implements PaginatedSearchable<TQuery, TModel> {
     protected stateByQuery = new RequestState<TQuery, PaginationState<TId>>(() => new PaginationState());
     protected listenersByQuery = new Set<ListenerSpecification<TQuery>>();

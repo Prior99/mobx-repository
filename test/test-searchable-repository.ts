@@ -1,5 +1,6 @@
-import { SearchableRepository, FetchByQueryResult } from "../src";
 import { autorun } from "mobx";
+
+import { SearchableRepository, FetchByQueryResult } from "../src";
 
 describe("SearchableRepository", () => {
     interface TestModel {
