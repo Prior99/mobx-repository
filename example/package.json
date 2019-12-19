@@ -1,0 +1,23 @@
+{
+  "name": "example",
+  "version": "1.0.0",
+  "description": "Example for mobx-repository.",
+  "main": "dist/index.html",
+  "author": "Frederick Gnodtke",
+  "license": "MIT",
+  "dependencies": {
+    "mobx": "^5.15.1",
+    "mobx-react": "^6.1.4",
+    "mobx-repository": "file:..",
+    "react": "^16.12.0",
+    "react-dom": "^16.12.0",
+    "typescript": "^3.7.3"
+  },
+  "devDependencies": {
+    "@types/react": "^16.9.16",
+    "@types/react-dom": "^16.9.4",
+    "ts-loader": "^6.2.1",
+    "webpack": "^4.41.4",
+    "webpack-cli": "^3.3.10"
+  }
+}
