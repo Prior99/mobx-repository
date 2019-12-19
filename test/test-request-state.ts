@@ -1,15 +1,15 @@
-import { RequestState, RequestStatus } from "../src";
+import { RequestStates, RequestStatus } from "../src";
 
 describe("RequestState", () => {
     interface TestState {
         value: string;
     }
 
-    let requestState: RequestState<string, TestState>;
+    let requestState: RequestStates<string, TestState>;
 
     describe("without factory", () => {
         beforeEach(() => {
-            requestState = new RequestState();
+            requestState = new RequestStates();
         });
 
         describe("initially", () => {
@@ -28,7 +28,7 @@ describe("RequestState", () => {
 
         beforeEach(() => {
             stateFactory = jest.fn(() => ({ value: "from factory" }));
-            requestState = new RequestState(stateFactory);
+            requestState = new RequestStates(stateFactory);
         });
 
         describe("initially", () => {

@@ -14,7 +14,7 @@
   "scripts": {
     "build": "tsc",
     "clean": "rm -rf dist",
-    "docs": "typedoc --mode file --out docs/ src/",
+    "docs": "typedoc --excludePrivate --mode file --out docs/ src/",
     "lint": "eslint --max-warnings 0 src/**/*.ts test/**/*.ts",
     "test": "jest --coverage"
   },

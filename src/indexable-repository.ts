@@ -1,7 +1,7 @@
 import { observable, action } from "mobx";
 import { bind } from "bind-decorator";
 
-import { RequestStatus, RequestState } from "./request-state";
+import { RequestStatus, RequestStates } from "./request-states";
 import { PromiseCallbacks, ErrorListener } from "./listeners";
 import { Repository } from "./repository";
 
@@ -208,9 +208,25 @@ export interface Indexable<TEntity, TId = string> {
  * ```
  */
 export abstract class IndexableRepository<TEntity, TId = string> implements Indexable<TEntity, TId>, Repository {
+    /**
+     * A map including all entities in the cache.
+     * Indexed by the ids extracted in [[IndexableRepository.extractId]].
+     */
     @observable protected entities = new Map<TId, TEntity>();
-    protected stateById = new RequestState<TId>();
+
+    /**
+     * The state of all requests performed to load entities by id.
+     */
+    protected stateById = new RequestStates<TId>();
+
+    /**
+     * Listeners attached via [[IndexableRepository.waitForId]].
+     */
     protected listenersById = new Map<TId, PromiseCallbacks[]>();
+
+    /**
+     * All instances of [[ErrorListener]] attached to this repository.
+     */
     protected errorListeners = new Set<ErrorListener>();
 
     /**

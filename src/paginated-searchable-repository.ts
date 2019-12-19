@@ -2,14 +2,24 @@ import { action, transaction } from "mobx";
 import { bind } from "bind-decorator";
 import deepEqual from "deep-equal";
 
-import { RequestState, RequestStatus } from "./request-state";
+import { RequestStates, RequestStatus } from "./request-states";
 import { FetchByQueryResult, Searchable } from "./searchable-repository";
 import { IndexableRepository } from "./indexable-repository";
 import { Pagination } from "./pagination";
 import { PromiseCallbacks } from "./listeners";
-import { PaginationState } from "./pagination-state";
 import { Segment } from "./segment";
 import { SegmentWithIds } from "./segment-with-ids";
+import { PaginationRange } from "./pagination-range";
+
+/**
+ * The request state associated with a request from [[PaginatedSearchableRepository]].
+ */
+export class StatePaginatedSearchable<TId = string> {
+    /**
+     * The range of loaded segments within the pagination.
+     */
+    public paginationRange = new PaginationRange<TId>();
+}
 
 /**
  * An object that can be queried with pagination enabled.
@@ -17,7 +27,7 @@ import { SegmentWithIds } from "./segment-with-ids";
 export interface PaginatedSearchable<TQuery, TEntity> extends Searchable<TQuery, TEntity> {
     /**
      * Search for entities within the repository.
-     * The result will cached based on the query and pagination.
+     * The result will be cached based on the query and pagination.
      *
      * Only ranges that weren't previously loaded will be loaded if a query is invoked multiple times with different
      * ranges.
@@ -133,9 +143,9 @@ export interface PaginatedSearchable<TQuery, TEntity> extends Searchable<TQuery,
      *
      * spyOnQueryInRange({ search: "my name" }, { offset: 10, count: 40 });
      *
-     * await myRepository.byQueryAsync({ search: "my name", { offset: 0, count: 20 }});
+     * await myRepository.byQueryAsync({ search: "my name" }, { offset: 0, count: 20 });
      * // The Promise should not yet have resolved, as part of the range is missing.
-     * await myRepository.byQueryAsync({ search: "my name", { offset: 21, count: 30 }});
+     * await myRepository.byQueryAsync({ search: "my name" }, { offset: 21, count: 30 });
      * // The Promise should now have resolved, as the query is fully loaded.
      * ```
      *
@@ -219,7 +229,17 @@ interface ListenerSpecification<TQuery> {
 export abstract class PaginatedSearchableRepository<TQuery, TEntity, TId = string>
     extends IndexableRepository<TEntity, TId>
     implements PaginatedSearchable<TQuery, TEntity> {
-    protected stateByQuery = new RequestState<TQuery, PaginationState<TId>>(() => new PaginationState());
+    /**
+     * The state of all requests performed to load entities by query.
+     * This includes the request's states as well as the currently loaded range of pagination.
+     */
+    protected stateByQuery = new RequestStates<TQuery, StatePaginatedSearchable<TId>>(
+        () => new StatePaginatedSearchable(),
+    );
+
+    /**
+     * All listeners attached to this repository in [[PaginatedSearchableRepository.waitForQuery]].
+     */
     protected listenersByQuery = new Set<ListenerSpecification<TQuery>>();
     /**
      * This value is used if a provided pagination is under specified.
