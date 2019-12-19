@@ -2,7 +2,7 @@ import { observable, action } from "mobx";
 import { bind } from "bind-decorator";
 
 import { RequestStatus, RequestState } from "./request-state";
-import { Listener, ErrorListener } from "./listener";
+import { PromiseCallbacks, ErrorListener } from "./listeners";
 import { Repository } from "./repository";
 
 /**
@@ -206,7 +206,7 @@ export interface Indexable<TEntity, TId = string> {
 export abstract class IndexableRepository<TEntity, TId = string> implements Indexable<TEntity, TId>, Repository {
     @observable protected entities = new Map<TId, TEntity>();
     protected stateById = new RequestState<TId>();
-    protected listenersById = new Map<TId, Listener[]>();
+    protected listenersById = new Map<TId, PromiseCallbacks[]>();
     protected errorListeners = new Set<ErrorListener>();
 
     /**

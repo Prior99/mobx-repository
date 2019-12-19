@@ -1,4 +1,4 @@
-import { ErrorListener } from "./listener";
+import { ErrorListener } from "./listeners";
 
 /**
  * Basic features every repository needs to provide.

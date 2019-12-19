@@ -2,7 +2,7 @@ import { action, transaction } from "mobx";
 import { bind } from "bind-decorator";
 
 import { IndexableRepository } from "./indexable-repository";
-import { Listener } from "./listener";
+import { PromiseCallbacks } from "./listeners";
 import { RequestStatus, RequestState } from "./request-state";
 
 export interface StateSearchable<TId> {
@@ -24,7 +24,7 @@ export abstract class SearchableRepository<TQuery, TEntity, TId = string> extend
     protected stateByQuery = new RequestState<TQuery, StateSearchable<TId>>(() => ({
         resultingIds: new Set(),
     }));
-    protected listenersByQuery = new Map<string, Listener[]>();
+    protected listenersByQuery = new Map<string, PromiseCallbacks[]>();
 
     protected abstract async fetchByQuery(query: TQuery): Promise<FetchByQueryResult<TEntity>>;
 

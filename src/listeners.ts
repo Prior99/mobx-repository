@@ -1,4 +1,4 @@
-export interface Listener {
+export interface PromiseCallbacks {
     resolve: () => void;
     reject: (error: Error) => void;
 }

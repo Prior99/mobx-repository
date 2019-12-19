@@ -6,7 +6,7 @@ import { RequestState, RequestStatus } from "./request-state";
 import { FetchByQueryResult, Searchable } from "./searchable-repository";
 import { IndexableRepository } from "./indexable-repository";
 import { Pagination } from "./pagination";
-import { Listener } from "./listener";
+import { PromiseCallbacks } from "./listeners";
 import { PaginationState } from "./pagination-state";
 import { Segment } from "./segment";
 import { SegmentWithIds } from "./segment-with-ids";
@@ -19,7 +19,7 @@ export interface PaginatedSearchable<TQuery, TEntity> extends Searchable<TQuery,
 export interface ListenerSpecification<TQuery> {
     query: TQuery;
     pagination: Pagination;
-    listener: Listener;
+    listener: PromiseCallbacks;
 }
 
 export abstract class PaginatedSearchableRepository<TQuery, TEntity, TId = string> extends IndexableRepository<TEntity, TId>

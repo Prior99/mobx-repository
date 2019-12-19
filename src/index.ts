@@ -1,5 +1,5 @@
 export * from "./indexable-repository";
-export * from "./listener";
+export * from "./listeners";
 export * from "./paginated-searchable-repository";
 export * from "./pagination-range";
 export * from "./pagination-state";
