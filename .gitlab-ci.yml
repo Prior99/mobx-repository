@@ -1,0 +1,73 @@
+image: node:10
+
+stages:
+  - build
+  - test
+  - deploy
+
+cache:
+  paths:
+    - node_modules/
+
+build:
+  before_script:
+    - apt-get update -qq
+    - apt-get install make git -qq
+    - yarn
+  stage: build
+  script:
+    - yarn build
+    - yarn docs
+    - cd example 
+    - yarn
+    - yarn build
+  artifacts:
+    paths:
+      - dist/
+      - docs/
+      - example/dist
+      - example/index.tsx
+      - example/package.json
+      - example/yarn.lock
+      - src/
+      - LICENSE
+      - package.json
+      - README.md
+      - yarn.lock
+
+test:
+  before_script:
+    - apt-get update -qq
+    - apt-get install make git -qq
+    - yarn
+  stage: test
+  script:
+    - yarn test
+  dependencies:
+    - build
+  artifacts:
+    paths:
+      - coverage/
+
+lint:
+  before_script:
+    - apt-get update -qq
+    - apt-get install make git -qq
+    - yarn
+  stage: test
+  script:
+    - yarn lint
+
+pages:
+  stage: deploy
+  script:
+    - mv docs public
+    - mv example public/example
+  dependencies:
+    - test
+    - build
+  artifacts:
+    paths:
+      - public
+  only:
+    - master

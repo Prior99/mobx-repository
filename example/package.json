@@ -5,6 +5,9 @@
   "main": "dist/index.html",
   "author": "Frederick Gnodtke",
   "license": "MIT",
+  "scripts": {
+    "build": "webpack"
+  },
   "dependencies": {
     "mobx": "^5.15.1",
     "mobx-react": "^6.1.4",
