@@ -62,7 +62,7 @@ pages:
   stage: deploy
   script:
     - mv docs public
-    - mv example public/example
+    - mv example/dist public/example
   dependencies:
     - test
     - build
