@@ -9,7 +9,7 @@ Object oriented typescript repository for managing the model.
 
 - [Example code](./example/index.tsx)
 - [Api Reference](https://prior99.gitlab.io/mobx-repository/index.html)
-- [Example](https://prior99.gitlab.io/mobx-repository/example/index.html.html)
+- [Example](https://prior99.gitlab.io/mobx-repository/example/index.html)
 
 
 ## Contributing
