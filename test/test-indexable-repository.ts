@@ -47,7 +47,7 @@ describe("IndexableRepository", () => {
             describe("when invoking `byIdAsync`", () => {
                 beforeEach(async () => await repository.byIdAsync("some"));
 
-                it("makes the promise reject", () => expect(waitForIdPromise).rejects.toEqual(expect.any(Error)));
+                it("makes the Promise reject", () => expect(waitForIdPromise).rejects.toEqual(expect.any(Error)));
             });
         });
 
@@ -168,9 +168,9 @@ describe("IndexableRepository", () => {
                 await new Promise(resolve => setTimeout(resolve));
             });
 
-            it("promise 1 resolves", () => expect(waitForIdPromise1).resolves.toBeUndefined());
+            it("Promise 1 resolves", () => expect(waitForIdPromise1).resolves.toBeUndefined());
 
-            it("promise 2 resolves", () => expect(waitForIdPromise2).resolves.toBeUndefined());
+            it("Promise 2 resolves", () => expect(waitForIdPromise2).resolves.toBeUndefined());
         });
 
         describe("invoking `byIdAsync` during `byId`", () => {
@@ -311,7 +311,7 @@ describe("IndexableRepository", () => {
                 repository.evict("some");
             });
 
-            it("makes the promise reject", () => expect(byIdAsyncPromise).rejects.toEqual(expect.any(Error)));
+            it("makes the Promise reject", () => expect(byIdAsyncPromise).rejects.toEqual(expect.any(Error)));
         });
 
         describe("invoking `reset` during `byIdAsync` during `byId`", () => {
@@ -323,7 +323,7 @@ describe("IndexableRepository", () => {
                 repository.reset();
             });
 
-            it("makes the promise reject", () => expect(byIdAsyncPromise).rejects.toEqual(expect.any(Error)));
+            it("makes the Promise reject", () => expect(byIdAsyncPromise).rejects.toEqual(expect.any(Error)));
         });
     });
 });

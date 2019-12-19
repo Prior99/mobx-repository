@@ -328,7 +328,7 @@ describe("SearchableRepository", () => {
             describe("when invoking `byIdAsync`", () => {
                 beforeEach(async () => await repository.byQuery(query));
 
-                it("makes the promise reject", () => expect(waitForQueryPromise).rejects.toEqual(expect.any(Error)));
+                it("makes the Promise reject", () => expect(waitForQueryPromise).rejects.toEqual(expect.any(Error)));
             });
         });
     });

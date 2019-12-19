@@ -12,13 +12,14 @@ export interface Indexable<TEntity, TId = string> {
     /**
      * Access an entity synchronously by its id.
      * This will return `undefined` at first (if the entity is not yet in the cache), but load the entity
-     * in the background. Due to mobx's reactive nature, your observer should detect the change, re-render,
+     * in the background. Due to MobX's reactive nature, your observer should detect the change, re-render,
      * call this method again and then get the newly cached entity.
      *
      * As repositories are implemented as caches, this operation can be performed without cost after the
      * entity was initially loaded. The underlying asynchronous operation will only be performed once.
      *
-     * @example
+     * #### Example
+     * 
      * ```
      *     @observer
      *     class MyComponent extends React.Component<{ id: string }> {
@@ -53,12 +54,13 @@ export interface Indexable<TEntity, TId = string> {
 
     /**
      * Access an entity asynchronously by its id.
+     * Has the same call signature as [[Indexable.byId]], but returns a Promise.
      * This will resolve to the entity if no error occurred while loading it.
      *
      * As repositories are implemented as caches, this operation can be performed without cost after the
      * entity was initially loaded. The underlying asynchronous operation will only be performed once.
      *
-     * @example
+     * #### Example
      * ```
      *     class MyService {
      *         // Get access to the repository.
@@ -75,18 +77,19 @@ export interface Indexable<TEntity, TId = string> {
      *     }
      * ```
      *
-     * @throws Will throw if loading the entity failed.
+     * @throws Will throw if loading the entity failed or if the entity was evicted after being loaded but before
+     *     this Promise resolved.
      *
      * @param id The id of the entity to retrieve.
      *
-     * @return A promise resolving to the entity or `undefined` if it failed to load.
+     * @return A Promise resolving to the entity or `undefined` if it failed to load.
      */
     byIdAsync(id: TId): Promise<TEntity | undefined>;
 
     /**
      * Waits for a specified id to be available, without triggering it to load or resolving to it.
      *
-     * @example
+     * #### Example
      * ```
      * const myRepository: MyRepository = ...;
      *
@@ -105,14 +108,14 @@ export interface Indexable<TEntity, TId = string> {
      *
      * @param id The id of the entity to wait for.
      *
-     * @return A promise resolving once the entity with the specified id was loaded.
+     * @return A Promise resolving once the entity with the specified id was loaded.
      */
     waitForId(id: TId): Promise<void>;
 
     /**
      * Checks whether an entity is currently in the cache.
      *
-     * @example
+     * #### Example
      * ```
      * const myRepository: MyRepository = ...;
      * expect(myRepository.isLoaded("some-unique-id-119")).toBe(false);
@@ -129,7 +132,7 @@ export interface Indexable<TEntity, TId = string> {
     /**
      * Checks whether an entity is currently in the cache, being loaded, failed to load or was not found previously.
      *
-     * @example
+     * #### Example
      * ```
      * const myRepository: MyRepository = ...;
      * expect(myRepository.isKnown("some-unique-id-119")).toBe(false);
@@ -169,18 +172,19 @@ export interface Indexable<TEntity, TId = string> {
      *
      * @return The entity if it was currently cached or `undefined` if it was not yet cached.
      *
-     * @return A promise resolving to the entity or `undefined` if it failed to load.
+     * @return A Promise resolving to the entity or `undefined` if it failed to load.
      */
     reloadId(id: TId): Promise<TEntity>;
 }
 
 /**
- * An abstract class implementing `Indexable` and providing all its caching operations.
+ * An abstract class implementing [[Indexable]] and providing all its caching operations.
  * Two abstract methods need to be implemented: `fetchById` and `extractId`.
- * The method `fetchById` is responsible for performing the actual call to the asynchronous provider (e.g. REST API) and
- * `extractId` needs to return an unique identifier for any provided entity.
+ * The method [[IndexableRepository.fetchById]] is responsible for performing the actual call to the asynchronous
+ * provider (e.g. REST API) and [[IndexableRepository.extractId]] needs to return an unique identifier for any provided
+ * entity.
  *
- * @example
+ * #### Example
  * ```
  * interface MyEntity {
  *     id: number;
@@ -214,7 +218,7 @@ export abstract class IndexableRepository<TEntity, TId = string> implements Inde
      * If the entity could not be found, the method is expected to return `undefined`.
      * It is okay to have this method reject with an error.
      * 
-     * @example
+     * #### Example
      * ```
      * protected async fetchById(id: number): Promise<MyEntity> {
      *     const response = await fetch(`http://example.com/api/my-entity/${id}`);
@@ -230,7 +234,7 @@ export abstract class IndexableRepository<TEntity, TId = string> implements Inde
      * 
      * @param id The id of the entity to load.
      * 
-     * @return A promise that resolves with the entity if it could be loaded, or `undefined` if it couldn't be found.
+     * @return A Promise that resolves with the entity if it could be loaded, or `undefined` if it couldn't be found.
      */
     protected abstract fetchById(id: TId): Promise<TEntity | undefined>;
 
@@ -238,7 +242,7 @@ export abstract class IndexableRepository<TEntity, TId = string> implements Inde
      * Implement the extraction of a unique id from a given entity.
      * The id will be used as key for the repository's cache.
      * 
-     * @example
+     * #### Example
      * ```
      * protected async extractId(entity: MyEntity): number {
      *     return entity.id;
