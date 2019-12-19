@@ -181,7 +181,7 @@ interface ListenerSpecification<TQuery> {
 }
 
 /**
- * An abstract class implementing [[PaginatedSearchable]] and providing all its caching operations.
+ * An abstract class implementing [[PaginatedSearchable]] providing all its caching operations.
  * In addition to the abstract methods of [[IndexableRepository]], which this class extends, one additional abstract
  * method needs to be implemented: [[PaginatedSearchableRepository.fetchByQuery]]. It will be invoked if a given
  * range of paginated search results is not yet loaded and needs to resolve to an array of entities matching the
@@ -348,7 +348,7 @@ export abstract class PaginatedSearchableRepository<TQuery, TEntity, TId = strin
             });
     }
 
-    @action.bound protected async loadByQuery(query: TQuery, partialPagination: Partial<Pagination>): Promise<void> {
+    @action.bound private async loadByQuery(query: TQuery, partialPagination: Partial<Pagination>): Promise<void> {
         const pagination = this.completePagination(partialPagination);
         if (this.isQueryDoneInRange(query, pagination) || this.stateByQuery.isStatus(query, RequestStatus.ERROR)) {
             return;
