@@ -361,13 +361,13 @@ export abstract class PaginatedSearchableRepository<TQuery, TEntity, TId = strin
         const segmentsToLoad = this.stateByQuery.getState(query).paginationRange.getMissingSegments(pagination);
         try {
             await Promise.all(segmentsToLoad.map(segment => this.loadIndividualRange(query, segment)));
+            this.stateByQuery.setStatus(query, RequestStatus.DONE);
+            this.callListenersByQuery(query);
         } catch (error) {
             this.stateByQuery.setStatus(query, RequestStatus.ERROR, error);
             this.errorListeners.forEach(callback => callback(error));
             this.callListenersByQuery(query, error);
         }
-        this.stateByQuery.setStatus(query, RequestStatus.DONE);
-        this.callListenersByQuery(query);
     }
 
     @action.bound private async loadIndividualRange(

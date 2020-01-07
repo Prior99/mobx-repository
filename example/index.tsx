@@ -30,6 +30,7 @@ export class StoreGithubRepositories extends PaginatedSearchableRepository<Githu
         const response = await fetch(
             `https://api.github.com/search/repositories?q=${name}&page=${page}&per_page=${count}`,
         );
+        if (!response.ok) { throw response; }
         const { items: entities } = await response.json();
         return { entities };
     }
@@ -39,6 +40,7 @@ export class StoreGithubRepositories extends PaginatedSearchableRepository<Githu
         if (response.status === 404) {
             return;
         }
+        if (!response.ok) { throw response; }
         const result = await response.json();
         return result;
     }
@@ -54,7 +56,12 @@ export class GithubRepositoryList extends React.Component {
     private count = 10;
 
     @observable private offset = 0
-    @observable private name = "app";
+    @observable private name = "mobx";
+
+    constructor(props: unknown) {
+        super(props);
+        this.store.addErrorListener(err => alert("An error occured!"));
+    }
 
     public render(): JSX.Element {
         const { name, offset, count } = this;

@@ -298,8 +298,8 @@ export abstract class SearchableRepository<TQuery, TEntity, TId = string> extend
                 entities.forEach(entity => this.add(entity));
                 const resultingIds = new Set(entities.map(entity => this.extractId(entity)));
                 this.stateByQuery.setState(query, { resultingIds });
-                this.callListenersByQuery(query);
                 this.stateByQuery.setStatus(query, RequestStatus.DONE);
+                this.callListenersByQuery(query);
             });
         } catch (error) {
             this.stateByQuery.setStatus(query, RequestStatus.ERROR, error);
