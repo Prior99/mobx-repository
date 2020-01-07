@@ -26,7 +26,7 @@ export class StoreGithubRepositories extends PaginatedSearchableRepository<Githu
     ): Promise<FetchByQueryResult<GithubRepository>> {
         const { name } = query;
         const { offset, count } = pagination;
-        const page = Math.floor(offset / count);
+        const page = Math.floor(offset / count) + 1;
         const response = await fetch(
             `https://api.github.com/search/repositories?q=${name}&page=${page}&per_page=${count}`,
         );
