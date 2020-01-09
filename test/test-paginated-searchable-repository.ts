@@ -22,7 +22,10 @@ describe("PaginatedSearchableRepository", () => {
     let pagination: Pagination;
 
     class TestRepository extends PaginatedSearchableRepository<TestQuery, TestEntity> {
-        protected async fetchByQuery(query: TestQuery, pagination: Pagination): Promise<FetchByQueryResult<TestEntity>> {
+        protected async fetchByQuery(
+            query: TestQuery,
+            pagination: Pagination,
+        ): Promise<FetchByQueryResult<TestEntity>> {
             return { entities: spyFetchByQuery(query, pagination) };
         }
 
@@ -375,6 +378,26 @@ describe("PaginatedSearchableRepository", () => {
                     });
                 });
             });
+        });
+    });
+
+    describe("with the loading function being exhausted", () => {
+        beforeEach(() =>
+            spyFetchByQuery.mockImplementation(() => {
+                return [
+                    { id: `id-1`, value: `value-1` },
+                    { id: `id-`, value: `value-1` },
+                ];
+            }),
+        );
+
+        describe("after loading", () => {
+            beforeEach(async () => {
+                await repository.byQueryAsync(query, { offset: 0, count: 10 });
+            });
+
+            it("reports the query out of bounds", () =>
+                expect(repository.wasOutOfBounds(query, { offset: 0, count: 10 })).toBe(true));
         });
     });
 

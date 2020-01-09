@@ -19,6 +19,10 @@ export class StatePaginatedSearchable<TId = string> {
      * The range of loaded segments within the pagination.
      */
     public paginationRange = new PaginationRange<TId>();
+    /**
+     * If an upper limit was encountered, it's stored here.
+     */
+    public limit?: number;
 }
 
 /**
@@ -158,6 +162,14 @@ export interface PaginatedSearchable<TQuery, TEntity> extends Searchable<TQuery,
      * @return A Promise resolving once the query is fully available in the given range of pagination.
      */
     waitForQuery(query: TQuery, partialPagination?: Partial<Pagination>): Promise<void>;
+
+    /**
+     * Checks whether a specified query was out of bounds earlier, in the specified range.
+     * 
+     * @param query The query to check.
+     * @param pagination The pagination to check.
+     */
+    wasOutOfBounds(query: TQuery, pagination: Pagination): boolean;
 }
 
 /**
@@ -348,9 +360,20 @@ export abstract class PaginatedSearchableRepository<TQuery, TEntity, TId = strin
             });
     }
 
+    /** @inheritdoc */
+    @bind public wasOutOfBounds(query: TQuery, pagination: Pagination): boolean {
+        const { limit } = this.stateByQuery.getState(query);
+        if (typeof limit !== "number") { return false; }
+        return limit < pagination.count + pagination.offset;
+    }
+
     @action.bound private async loadByQuery(query: TQuery, partialPagination: Partial<Pagination>): Promise<void> {
         const pagination = this.completePagination(partialPagination);
-        if (this.isQueryDoneInRange(query, pagination) || this.stateByQuery.isStatus(query, RequestStatus.ERROR)) {
+        if (
+            this.isQueryDoneInRange(query, pagination) ||
+            this.stateByQuery.isStatus(query, RequestStatus.ERROR) ||
+            this.wasOutOfBounds(query, pagination)
+        ) {
             return;
         }
         if (this.stateByQuery.isStatus(query, RequestStatus.IN_PROGRESS)) {
@@ -378,7 +401,11 @@ export abstract class PaginatedSearchableRepository<TQuery, TEntity, TId = strin
         transaction(() => {
             result.entities.forEach(entity => this.add(entity));
             const ids = new Set(result.entities.map(entity => this.extractId(entity)));
-            this.stateByQuery.getState(query).paginationRange.add(new SegmentWithIds(segment.offset, ids));
+            const state = this.stateByQuery.getState(query);
+            state.paginationRange.add(new SegmentWithIds(segment.offset, ids));
+            if (result.entities.length < segment.count) {
+                state.limit = segment.offset + result.entities.length;
+            }
         });
         return result;
     }
