@@ -1,3 +1,5 @@
+(global as any).setTimeout = (callback: () => void) => callback(); // eslint-disable-line
+
 import { autorun } from "mobx";
 
 import { IndexableRepository } from "../src";

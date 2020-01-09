@@ -273,7 +273,7 @@ export abstract class IndexableRepository<TEntity, TId = string> implements Inde
 
     /** @inheritdoc */
     @bind public byId(id: TId): TEntity | undefined {
-        this.loadById(id);
+        setTimeout(() => this.loadById(id));
         return this.entities.get(id);
     }
 

@@ -222,7 +222,7 @@ export abstract class SearchableRepository<TQuery, TEntity, TId = string> extend
 
     /** @inheritdoc */
     @bind public byQuery(query: TQuery): TEntity[] {
-        this.loadByQuery(query);
+        setTimeout(() => this.loadByQuery(query));
         return this.resolveEntities(query);
     }
 

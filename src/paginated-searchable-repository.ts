@@ -276,7 +276,7 @@ export abstract class PaginatedSearchableRepository<TQuery, TEntity, TId = strin
 
     /** @inheritdoc */
     @bind public byQuery(query: TQuery, pagination: Partial<Pagination> = {}): TEntity[] {
-        this.loadByQuery(query, pagination);
+        setTimeout(() => this.loadByQuery(query, pagination));
         return this.resolveEntities(query, pagination);
     }
 
