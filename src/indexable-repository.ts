@@ -1,9 +1,13 @@
-import { observable, action } from "mobx";
+import { observable, action, transaction } from "mobx";
 import { bind } from "bind-decorator";
 
 import { RequestStatus, RequestStates } from "./request-states";
 import { PromiseCallbacks, ErrorListener } from "./listeners";
 import { Repository } from "./repository";
+
+export interface LoadOptions {
+    force?: boolean;
+}
 
 /**
  * An indexable object which provides basic access to a set of entities by id.
@@ -343,7 +347,7 @@ export abstract class IndexableRepository<TEntity, TId = string> implements Inde
 
     /** @inheritdoc */
     @action.bound public async reloadId(id: TId): Promise<TEntity> {
-        this.evict(id);
+        await this.loadById(id, { force: true });
         return await this.byIdAsync(id);
     }
 
@@ -361,8 +365,8 @@ export abstract class IndexableRepository<TEntity, TId = string> implements Inde
         this.listenersById.delete(id);
     }
 
-    @action.bound private async loadById(id: TId): Promise<void> {
-        if (this.stateById.isStatus(id, RequestStatus.DONE)) {
+    @action.bound private async loadById(id: TId, { force = false }: LoadOptions = {}): Promise<void> {
+        if (!force && (this.isLoaded(id) || this.stateById.isStatus(id, RequestStatus.DONE))) {
             return;
         }
         if (this.stateById.isStatus(id, RequestStatus.IN_PROGRESS, RequestStatus.ERROR)) {
