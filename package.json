@@ -1,6 +1,6 @@
 {
   "name": "mobx-repository",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Object oriented typescript repository for managing the model.",
   "main": "dist/index.js",
   "repository": "https://github.com/Prior99/mobx-repository",
