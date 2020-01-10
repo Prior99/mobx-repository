@@ -310,7 +310,7 @@ export abstract class IndexableRepository<TEntity, TId = string> implements Inde
 
     /** @inheritdoc */
     @bind public isKnown(id: TId): boolean {
-        return this.stateById.isStatus(
+        return this.isLoaded(id) || this.stateById.isStatus(
             id,
             RequestStatus.ERROR,
             RequestStatus.IN_PROGRESS,
