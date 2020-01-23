@@ -98,6 +98,18 @@ export interface PaginatedSearchable<TQuery, TEntity> extends Searchable<TQuery,
     byQuery(query: TQuery, pagination?: Pagination): TEntity[];
 
     /**
+     * Reload a query asynchronously.
+     * This will resolve to an array with all entities matching the query, reloading all from the server.
+     * The pagination does not designate which segment to reload: The whole query state will always be evicted,
+     * the pagination is only used to designate which area should be loaded afterwards.
+     *
+     * @param query The query to reload.
+     *
+     * @return A Promise resolving to an array of all entities that matched the query, freshly fetched from the server.
+     */
+    reloadQuery(query: TQuery, pagination?: Pagination): Promise<TEntity[]>;
+
+    /**
      * Load a query within the specified pagination range asynchronously.
      * Has the same call signature as [[PaginatedSearchable.byQuery]], but returns a Promise.
      * This will resolve to an array with all entities matching the query and within the pagination range.
@@ -328,6 +340,14 @@ export abstract class PaginatedSearchableRepository<TQuery, TEntity, TId = strin
                 this.stateByQuery.delete(info.id);
                 this.callListenersByQuery(info.id, new Error("Entity was evicted while waiting."));
             }
+        });
+    }
+
+    /** @inheritdoc */
+    @action.bound public async reloadQuery(query: TQuery, pagination: Partial<Pagination> = {}): Promise<TEntity[]> {
+        return await transaction(async () => {
+            this.stateByQuery.delete(query);
+            return await this.byQueryAsync(query, pagination);
         });
     }
 

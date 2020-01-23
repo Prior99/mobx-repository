@@ -1,4 +1,4 @@
-import { observable, action, transaction } from "mobx";
+import { observable, action } from "mobx";
 import { bind } from "bind-decorator";
 
 import { RequestStatus, RequestStates } from "./request-states";

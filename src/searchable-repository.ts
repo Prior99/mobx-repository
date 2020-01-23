@@ -80,6 +80,16 @@ export interface Searchable<TQuery, TEntity> {
     byQuery(query: TQuery): TEntity[];
 
     /**
+     * Reload a query asynchronously.
+     * This will resolve to an array with all entities matching the query, reloading all from the server.
+     *
+     * @param query The query to reload.
+     *
+     * @return A Promise resolving to an array of all entities that matched the query, freshly fetched from the server.
+     */
+    reloadQuery(query: TQuery): Promise<TEntity[]>;
+
+    /**
      * Load a query asynchronously.
      * Has the same call signature as [[Searchable.byQuery]], but returns a Promise.
      * This will resolve to an array with all entities matching the query.
@@ -250,6 +260,14 @@ export abstract class SearchableRepository<TQuery, TEntity, TId = string> extend
             if (info.state.resultingIds.has(id)) {
                 this.stateByQuery.delete(info.id);
             }
+        });
+    }
+
+    /** @inheritdoc */
+    @action.bound public async reloadQuery(query: TQuery): Promise<TEntity[]> {
+        return await transaction(async () => {
+            this.stateByQuery.delete(query);
+            return await this.byQueryAsync(query);
         });
     }
 

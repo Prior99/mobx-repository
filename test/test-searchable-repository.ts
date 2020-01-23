@@ -184,6 +184,26 @@ describe("SearchableRepository", () => {
                 it("doesn't call `fetchByQuery` again", () => expect(spyFetchByQuery).toBeCalledTimes(1));
             });
 
+            describe("`reloadByQuery`", () => {
+                let nextReturnValue: TestEntity[];
+
+                beforeEach(async () => {
+                    spyFetchByQuery.mockImplementation(() => [
+                        { id: "id-3", value: "value-some-3" },
+                        { id: "id-4", value: "value-some-4" },
+                    ])
+                    nextReturnValue = await repository.reloadQuery(query);
+                });
+
+                it("resolves to the entities", () =>
+                    expect(nextReturnValue).toEqual([
+                        { id: "id-3", value: "value-some-3" },
+                        { id: "id-4", value: "value-some-4" },
+                    ]));
+
+                it("calls `fetchByQuery` again", () => expect(spyFetchByQuery).toBeCalledTimes(2));
+            })
+
             describe("consecutive calls to `byQueryAsync`", () => {
                 let nextReturnValue: TestEntity[];
 
