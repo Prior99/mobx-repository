@@ -1,4 +1,4 @@
-import { action, transaction } from "mobx";
+import { action, makeObservable, transaction } from "mobx";
 import { bind } from "bind-decorator";
 
 import { IndexableRepository } from "./indexable-repository";
@@ -193,6 +193,12 @@ export interface Searchable<TQuery, TEntity> {
  */
 export abstract class SearchableRepository<TQuery, TEntity, TId = string> extends IndexableRepository<TEntity, TId>
     implements Searchable<TQuery, TEntity> {
+
+    constructor() {
+        super();
+        makeObservable(this);
+    }
+
     /**
      * The state of all requests performed to load entities by query.
      * This includes the request's states as well as the resulting ids.
@@ -228,7 +234,7 @@ export abstract class SearchableRepository<TQuery, TEntity, TId = string> extend
      *
      * @return The array of resulting entities, wrapped in [[FetchByQueryResult]].
      */
-    protected abstract async fetchByQuery(query: TQuery): Promise<FetchByQueryResult<TEntity>>;
+    protected abstract fetchByQuery(query: TQuery): Promise<FetchByQueryResult<TEntity>>;
 
     /** @inheritdoc */
     @bind public byQuery(query: TQuery): TEntity[] {
@@ -264,7 +270,7 @@ export abstract class SearchableRepository<TQuery, TEntity, TId = string> extend
     }
 
     /** @inheritdoc */
-    @action.bound public async reloadQuery(query: TQuery): Promise<TEntity[]> {
+    @bind public async reloadQuery(query: TQuery): Promise<TEntity[]> {
         return await transaction(async () => {
             this.stateByQuery.delete(query);
             return await this.byQueryAsync(query);
@@ -301,7 +307,7 @@ export abstract class SearchableRepository<TQuery, TEntity, TId = string> extend
         this.listenersByQuery.delete(key);
     }
 
-    @action.bound private async loadByQuery(query: TQuery): Promise<void> {
+    @bind private async loadByQuery(query: TQuery): Promise<void> {
         if (this.stateByQuery.isStatus(query, RequestStatus.DONE)) {
             return;
         }

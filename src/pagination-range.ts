@@ -1,5 +1,5 @@
 import bind from "bind-decorator";
-import { observable, action, computed } from "mobx";
+import { observable, action, computed, makeObservable } from "mobx";
 
 import { tidySegments, SegmentWithIds } from "./segment-with-ids";
 import { Segment } from "./segment";
@@ -9,7 +9,11 @@ import { Pagination } from "./pagination";
  * A set of all currently loaded pagination segments for a specific query.
  */
 export class PaginationRange<TId> {
-    @observable private segments: SegmentWithIds<TId>[] = [];
+    constructor(){
+        makeObservable(this);
+    }
+
+    @observable public segments: SegmentWithIds<TId>[] = [];
 
     /**
      * Designate a new segment to be loaded.

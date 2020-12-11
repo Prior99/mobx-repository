@@ -1,7 +1,6 @@
 (global as any).setTimeout = (callback: () => void) => callback(); // eslint-disable-line
 
-import { autorun } from "mobx";
-
+import { autorun, makeObservable } from "mobx";
 import { SearchableRepository, FetchByQueryResult } from "../src";
 
 describe("SearchableRepository", () => {
@@ -20,6 +19,11 @@ describe("SearchableRepository", () => {
     let query: TestQuery;
 
     class TestRepository extends SearchableRepository<TestQuery, TestEntity> {
+        constructor() {
+            super();
+            makeObservable(this);
+        }
+
         protected async fetchByQuery(query: TestQuery): Promise<FetchByQueryResult<TestEntity>> {
             return { entities: spyFetchByQuery(query) };
         }
@@ -65,7 +69,7 @@ describe("SearchableRepository", () => {
 
             describe("`byQuery` reactivity", () => {
                 it("updates after the fetch is done", () => {
-                    return new Promise(done => {
+                    return new Promise<void>(done => {
                         let calls = 0;
 
                         autorun(reaction => {

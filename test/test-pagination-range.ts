@@ -24,8 +24,8 @@ describe("PaginationRange", () => {
 
         it("returns loaded range", () =>
             expect(range.loadedSegments).toEqual([
-                { offset: 5, count: 10 },
-                { offset: 20, count: 5 },
+                new Segment({ offset: 5, count: 10 }),
+                new Segment({ offset: 20, count: 5 }),
             ]));
 
         it.each([

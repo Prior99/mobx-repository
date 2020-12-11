@@ -2,7 +2,7 @@
 
 import { autorun } from "mobx";
 
-import { Pagination, PaginatedSearchableRepository, FetchByQueryResult } from "../src";
+import { Pagination, PaginatedSearchableRepository, FetchByQueryResult, Segment } from "../src";
 
 describe("PaginatedSearchableRepository", () => {
     interface TestEntity {
@@ -66,26 +66,26 @@ describe("PaginatedSearchableRepository", () => {
                 it("returns empty array", () => expect(returnValue).toEqual([]));
 
                 it("calls `fetchByQuery` with the query", () =>
-                    expect(spyFetchByQuery).toBeCalledWith(query, {
+                    expect(spyFetchByQuery).toBeCalledWith(query, new Segment({
                         offset: 0,
                         count: 10,
-                    }));
+                })));
 
                 it("calls `fetchByQuery` once", () => expect(spyFetchByQuery).toBeCalledTimes(1));
             });
 
             describe("`byQuery` reactivity", () => {
                 it("updates after the fetch is done", () => {
-                    return new Promise(done => {
+                    return new Promise<void>(done => {
                         let calls = 0;
 
                         autorun(reaction => {
                             const result = repository.byQuery(
                                 { length: 5, search: "some" },
-                                {
+                                new Segment({
                                     offset: 0,
                                     count: 2,
-                                },
+                                }),
                             );
                             if (calls++ === 0) {
                                 expect(result).toEqual([]);
@@ -105,15 +105,15 @@ describe("PaginatedSearchableRepository", () => {
 
         describe("after loading three ranges", () => {
             beforeEach(async () => {
-                await repository.byQueryAsync(hugeQuery, { offset: 31, count: 10 });
-                await repository.byQueryAsync(hugeQuery, { offset: 51, count: 10 });
-                await repository.byQueryAsync(hugeQuery, { offset: 71, count: 10 });
+                await repository.byQueryAsync(hugeQuery, new Segment({ offset: 31, count: 10 }));
+                await repository.byQueryAsync(hugeQuery, new Segment({ offset: 51, count: 10 }));
+                await repository.byQueryAsync(hugeQuery, new Segment({ offset: 71, count: 10 }));
             });
 
             it("called `fetchByQuery` with those ranges", () => {
-                expect(spyFetchByQuery).toHaveBeenCalledWith(hugeQuery, { offset: 31, count: 10 });
-                expect(spyFetchByQuery).toHaveBeenCalledWith(hugeQuery, { offset: 51, count: 10 });
-                expect(spyFetchByQuery).toHaveBeenCalledWith(hugeQuery, { offset: 71, count: 10 });
+                expect(spyFetchByQuery).toHaveBeenCalledWith(hugeQuery, new Segment({ offset: 31, count: 10 }));
+                expect(spyFetchByQuery).toHaveBeenCalledWith(hugeQuery, new Segment({ offset: 51, count: 10 }));
+                expect(spyFetchByQuery).toHaveBeenCalledWith(hugeQuery, new Segment({ offset: 71, count: 10 }));
             });
 
             describe("after loading a partially loaded included range", () => {
@@ -121,7 +121,7 @@ describe("PaginatedSearchableRepository", () => {
 
                 beforeEach(async () => {
                     spyFetchByQuery.mockClear();
-                    returnValue = await repository.byQueryAsync(hugeQuery, { offset: 36, count: 20 });
+                    returnValue = await repository.byQueryAsync(hugeQuery, new Segment({ offset: 36, count: 20 }));
                 });
 
                 it("resolves to entities", () => {
@@ -136,7 +136,7 @@ describe("PaginatedSearchableRepository", () => {
                 });
 
                 it("called `fetchByQuery` with the missing range", () => {
-                    expect(spyFetchByQuery).toHaveBeenCalledWith(hugeQuery, { offset: 41, count: 10 });
+                    expect(spyFetchByQuery).toHaveBeenCalledWith(hugeQuery, new Segment({ offset: 41, count: 10 }));
                 });
             });
 
@@ -144,7 +144,7 @@ describe("PaginatedSearchableRepository", () => {
                 let returnValue: TestEntity[];
 
                 beforeEach(async () => {
-                    returnValue = await repository.byQueryAsync(hugeQuery, { offset: 25, count: 75 });
+                    returnValue = await repository.byQueryAsync(hugeQuery, new Segment({ offset: 25, count: 75 }));
                 });
 
                 it("resolves to entities", () => {
@@ -159,10 +159,10 @@ describe("PaginatedSearchableRepository", () => {
                 });
 
                 it("called `fetchByQuery` with the missing ranges", () => {
-                    expect(spyFetchByQuery).toHaveBeenCalledWith(hugeQuery, { offset: 25, count: 6 });
-                    expect(spyFetchByQuery).toHaveBeenCalledWith(hugeQuery, { offset: 41, count: 10 });
-                    expect(spyFetchByQuery).toHaveBeenCalledWith(hugeQuery, { offset: 61, count: 10 });
-                    expect(spyFetchByQuery).toHaveBeenCalledWith(hugeQuery, { offset: 81, count: 19 });
+                    expect(spyFetchByQuery).toHaveBeenCalledWith(hugeQuery, new Segment({ offset: 25, count: 6 }));
+                    expect(spyFetchByQuery).toHaveBeenCalledWith(hugeQuery, new Segment({ offset: 41, count: 10 }));
+                    expect(spyFetchByQuery).toHaveBeenCalledWith(hugeQuery, new Segment({ offset: 61, count: 10 }));
+                    expect(spyFetchByQuery).toHaveBeenCalledWith(hugeQuery, new Segment({ offset: 81, count: 19 }));
                 });
             });
         });
@@ -180,7 +180,7 @@ describe("PaginatedSearchableRepository", () => {
                     { id: "id-2", value: "value-some-2" },
                 ]));
 
-            it("calls `fetchByQuery` with the query", () => expect(spyFetchByQuery).toBeCalledWith(query, pagination));
+            it("calls `fetchByQuery` with the query", () => expect(spyFetchByQuery).toBeCalledWith(query, new Segment(pagination)));
 
             it("calls `fetchByQuery` once", () => expect(spyFetchByQuery).toBeCalledTimes(1));
 
@@ -325,7 +325,7 @@ describe("PaginatedSearchableRepository", () => {
             });
 
             describe("while loading a subrange", () => {
-                beforeEach(() => repository.byQuery(hugeQuery, { offset: 10, count: 25 }));
+                beforeEach(() => repository.byQuery(hugeQuery, new Segment({ offset: 10, count: 25 })));
 
                 describe("after evicting an unrelated id", () => {
                     beforeEach(() => repository.evict("id-1109"));
@@ -340,7 +340,7 @@ describe("PaginatedSearchableRepository", () => {
             });
 
             describe("after loading a subrange", () => {
-                beforeEach(() => repository.byQueryAsync(hugeQuery, { offset: 10, count: 25 }));
+                beforeEach(() => repository.byQueryAsync(hugeQuery, new Segment({ offset: 10, count: 25 })));
 
                 it("is still pending", () => {
                     expect(spyResolve1).not.toHaveBeenCalled();
@@ -372,7 +372,7 @@ describe("PaginatedSearchableRepository", () => {
                 });
 
                 describe("after loading the missing subrange", () => {
-                    beforeEach(() => repository.byQueryAsync(hugeQuery, { offset: 35, count: 25 }));
+                    beforeEach(() => repository.byQueryAsync(hugeQuery, new Segment({ offset: 35, count: 25 })));
 
                     it("is resolved", () => {
                         expect(spyResolve1).toHaveBeenCalled();
@@ -387,7 +387,7 @@ describe("PaginatedSearchableRepository", () => {
                         spyFetchByQuery.mockImplementation(() => {
                             throw new Error();
                         });
-                        await repository.byQueryAsync(hugeQuery, { offset: 35, count: 25 });
+                        await repository.byQueryAsync(hugeQuery, new Segment({ offset: 35, count: 25 }));
                     });
 
                     it("was rejected", () => {
@@ -413,11 +413,11 @@ describe("PaginatedSearchableRepository", () => {
 
         describe("after loading", () => {
             beforeEach(async () => {
-                await repository.byQueryAsync(query, { offset: 0, count: 10 });
+                await repository.byQueryAsync(query, new Segment({ offset: 0, count: 10 }));
             });
 
             it("reports the query out of bounds", () =>
-                expect(repository.wasOutOfBounds(query, { offset: 0, count: 10 })).toBe(true));
+                expect(repository.wasOutOfBounds(query, new Segment({ offset: 0, count: 10 }))).toBe(true));
         });
     });
 

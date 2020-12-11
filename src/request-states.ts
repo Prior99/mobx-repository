@@ -1,5 +1,5 @@
-import { bind } from "bind-decorator";
-import { observable } from "mobx";
+import bind from "bind-decorator";
+import { action, makeObservable, observable } from "mobx";
 
 /**
  * The status of some request.
@@ -71,9 +71,11 @@ export type RequestInfo<TId, TState, TError> =
  * Information (such as status, error and state) about a set of requests.
  */
 export class RequestStates<TId = string, TState = undefined, TError = Error> {
-    @observable private requestStates = new Map<string, RequestInfo<TId, TState, TError>>();
+    @observable public requestStates = new Map<string, RequestInfo<TId, TState, TError>>();
 
-    constructor(private stateFactory: () => TState = () => undefined) {}
+    constructor(private stateFactory: () => TState = () => undefined) {
+        makeObservable(this);
+    }
 
     /**
      * Perform an operation on all instances of [[RequestInfo]] known by this instance.
@@ -89,7 +91,7 @@ export class RequestStates<TId = string, TState = undefined, TError = Error> {
      *
      * @param info The request status to overwrite.
      */
-    @bind public update(info: RequestInfo<TId, TState, TError>): void {
+    @action.bound public update(info: RequestInfo<TId, TState, TError>): void {
         const key = JSON.stringify(info.id);
         this.requestStates.set(key, info);
     }
@@ -110,7 +112,7 @@ export class RequestStates<TId = string, TState = undefined, TError = Error> {
      * @param status The new status.
      */
     public setStatus(id: TId, status: RequestStatus.ERROR, error: TError): void;
-    @bind public setStatus(id: TId, status: RequestStatus, error?: TError): void {
+    @action.bound public setStatus(id: TId, status: RequestStatus, error?: TError): void {
         const state = this.getState(id);
         if (error) {
             this.update({ status: RequestStatus.ERROR, error, state, id });
@@ -126,7 +128,7 @@ export class RequestStates<TId = string, TState = undefined, TError = Error> {
      * @param id The id of the request to update.
      * @param state The new state.
      */
-    @bind public setState(id: TId, state: TState): void {
+    @action.bound public setState(id: TId, state: TState): void {
         const current = this.get(id);
         this.update({ ...current, state });
     }
@@ -160,7 +162,7 @@ export class RequestStates<TId = string, TState = undefined, TError = Error> {
     /**
      * Reset all information about all requests.
      */
-    @bind public reset(): void {
+    @action.bound public reset(): void {
         this.requestStates.clear();
     }
 
@@ -170,7 +172,7 @@ export class RequestStates<TId = string, TState = undefined, TError = Error> {
      * 
      * @param id The id of the request to delete.
      */
-    @bind public delete(id: TId): void {
+    @action.bound public delete(id: TId): void {
         this.requestStates.delete(JSON.stringify(id));
     }
 

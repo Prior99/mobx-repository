@@ -22,10 +22,7 @@ export class Segment implements Pagination {
      * The absolute offset (index) within the pagination.
      */
     public readonly offset: number;
-    /**
-     * The number of entities.
-     */
-    public readonly count: number;
+    private readonly _count: number;
 
     /**
      * @param pagination Initialize a segment from a [[Pagination]].
@@ -39,13 +36,20 @@ export class Segment implements Pagination {
     constructor(arg1: Pagination | number, arg2?: number) {
         if (typeof arg1 === "object") {
             this.offset = arg1.offset;
-            this.count = arg1.count;
+            this._count = arg1.count;
         } else {
             this.offset = arg1;
             if (arg2 !== undefined) {
-                this.count = arg2;
+                this._count = arg2;
             }
         }
+    }
+
+    /**
+     * The number of entities.
+     */
+    public get count(): number {
+        return this._count;
     }
 
     /**

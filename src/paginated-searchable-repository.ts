@@ -1,4 +1,4 @@
-import { action, transaction } from "mobx";
+import { action, makeObservable, transaction } from "mobx";
 import { bind } from "bind-decorator";
 import deepEqual from "deep-equal";
 
@@ -253,6 +253,12 @@ interface ListenerSpecification<TQuery> {
 export abstract class PaginatedSearchableRepository<TQuery, TEntity, TId = string>
     extends IndexableRepository<TEntity, TId>
     implements PaginatedSearchable<TQuery, TEntity> {
+
+    constructor() {
+        super();
+        makeObservable(this);
+    }
+
     /**
      * The state of all requests performed to load entities by query.
      * This includes the request's states as well as the currently loaded range of pagination.
@@ -296,7 +302,7 @@ export abstract class PaginatedSearchableRepository<TQuery, TEntity, TId = strin
      *
      * @return The array of resulting entities, wrapped in [[FetchByQueryResult]].
      */
-    protected abstract async fetchByQuery(query: TQuery, pagination: Segment): Promise<FetchByQueryResult<TEntity>>;
+    protected abstract fetchByQuery(query: TQuery, pagination: Segment): Promise<FetchByQueryResult<TEntity>>;
 
     /** @inheritdoc */
     @bind public byQuery(query: TQuery, pagination: Partial<Pagination> = {}): TEntity[] {
@@ -344,7 +350,7 @@ export abstract class PaginatedSearchableRepository<TQuery, TEntity, TId = strin
     }
 
     /** @inheritdoc */
-    @action.bound public async reloadQuery(query: TQuery, pagination: Partial<Pagination> = {}): Promise<TEntity[]> {
+    @bind public async reloadQuery(query: TQuery, pagination: Partial<Pagination> = {}): Promise<TEntity[]> {
         return await transaction(async () => {
             this.stateByQuery.delete(query);
             return await this.byQueryAsync(query, pagination);
@@ -387,7 +393,7 @@ export abstract class PaginatedSearchableRepository<TQuery, TEntity, TId = strin
         return limit < pagination.count + pagination.offset;
     }
 
-    @action.bound private async loadByQuery(query: TQuery, partialPagination: Partial<Pagination>): Promise<void> {
+    @bind private async loadByQuery(query: TQuery, partialPagination: Partial<Pagination>): Promise<void> {
         const pagination = this.completePagination(partialPagination);
         if (
             this.isQueryDoneInRange(query, pagination) ||
@@ -413,7 +419,7 @@ export abstract class PaginatedSearchableRepository<TQuery, TEntity, TId = strin
         }
     }
 
-    @action.bound private async loadIndividualRange(
+    @bind private async loadIndividualRange(
         query: TQuery,
         segment: Segment,
     ): Promise<FetchByQueryResult<TEntity>> {
@@ -430,11 +436,7 @@ export abstract class PaginatedSearchableRepository<TQuery, TEntity, TId = strin
         return result;
     }
 
-    private get defaultPagination(): Pagination {
-        return { offset: 0, count: this.defaultCount };
-    }
-
     @bind private completePagination(partialPagination: Partial<Pagination>): Pagination {
-        return { ...this.defaultPagination, ...partialPagination };
+        return { count: partialPagination.count ?? this.defaultCount, offset: partialPagination.offset ?? 0 };
     }
 }

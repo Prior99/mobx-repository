@@ -10,7 +10,8 @@
         "experimentalDecorators": true,
         "sourceMap": true,
         "outDir": "dist",
-        "esModuleInterop": true
+        "esModuleInterop": true,
+        "useDefineForClassFields": true
     },
     "include": ["./src"]
 }

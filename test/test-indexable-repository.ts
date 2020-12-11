@@ -138,7 +138,7 @@ describe("IndexableRepository", () => {
 
             describe("`byId` reactivity", () => {
                 it("updates after the fetch is done", () => {
-                    return new Promise(done => {
+                    return new Promise<void>(done => {
                         let calls = 0;
 
                         autorun(reaction => {

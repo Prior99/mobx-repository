@@ -1,4 +1,4 @@
-import { observable, action } from "mobx";
+import { observable, action, makeObservable } from "mobx";
 import { bind } from "bind-decorator";
 
 import { RequestStatus, RequestStates } from "./request-states";
@@ -216,7 +216,11 @@ export abstract class IndexableRepository<TEntity, TId = string> implements Inde
      * A map including all entities in the cache.
      * Indexed by the ids extracted in [[IndexableRepository.extractId]].
      */
-    @observable protected entities = new Map<TId, TEntity>();
+    @observable public entities = new Map<TId, TEntity>();
+
+    constructor() {
+        makeObservable(this);
+    }
 
     /**
      * The state of all requests performed to load entities by id.
@@ -346,7 +350,7 @@ export abstract class IndexableRepository<TEntity, TId = string> implements Inde
     }
 
     /** @inheritdoc */
-    @action.bound public async reloadId(id: TId): Promise<TEntity> {
+    @bind public async reloadId(id: TId): Promise<TEntity> {
         await this.loadById(id, { force: true });
         return await this.byIdAsync(id);
     }
@@ -365,7 +369,7 @@ export abstract class IndexableRepository<TEntity, TId = string> implements Inde
         this.listenersById.delete(id);
     }
 
-    @action.bound private async loadById(id: TId, { force = false }: LoadOptions = {}): Promise<void> {
+    @bind private async loadById(id: TId, { force = false }: LoadOptions = {}): Promise<void> {
         if (!force && (this.isLoaded(id) || this.stateById.isStatus(id, RequestStatus.DONE))) {
             return;
         }
