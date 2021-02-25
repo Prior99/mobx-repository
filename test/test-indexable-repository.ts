@@ -159,6 +159,109 @@ describe("IndexableRepository", () => {
             });
         });
 
+        describe("`mutableCopyById`", () => {
+            describe("in its first call", () => {
+                let returnValue: TestEntity | undefined;
+
+                beforeEach(() => (returnValue = repository.mutableCopyById("batchId1", "some")));
+
+                it("returns `undefined`", () => expect(returnValue).toBeUndefined());
+
+                it("calls `fetchById` with the id", () => expect(spyFetchById).toBeCalledWith("some"));
+
+                it("calls `fetchById` once", () => expect(spyFetchById).toBeCalledTimes(1));
+            });
+
+            it("updates after the fetch is done", () => {
+                return new Promise<void>(done => {
+                    let calls = 0;
+
+                    autorun(reaction => {
+                        const result = repository.mutableCopyById("batchId1", "some");
+                        if (calls++ === 0) {
+                            expect(result).toBeUndefined();
+                        } else {
+                            expect(result).toEqual({
+                                id: "some",
+                                value: "value-some",
+                            });
+                            reaction.dispose();
+                            done();
+                        }
+                    });
+                });
+            });
+
+            describe("after the some entities have been cached", () => {
+                beforeEach(async () => {
+                    await repository.byIdAsync("entity1");
+                    await repository.byIdAsync("entity2");
+
+                    repository.mutableCopyById("batch1", "entity1");
+                    repository.mutableCopyById("batch1", "entity2");
+                    repository.mutableCopyById("batch2", "entity1");
+                });
+
+                describe("after updating the copies", () => {
+                    beforeEach(() => {
+                        const batch1entity1 = repository.mutableCopyById("batch1", "entity1");
+                        const batch1entity2 = repository.mutableCopyById("batch1", "entity2");
+                        const batch2entity1 = repository.mutableCopyById("batch2", "entity1");
+
+                        repository.setMutableCopy("batch1", { ...batch1entity1, value: "batch1entity1" });
+                        repository.setMutableCopy("batch1", { ...batch1entity2, value: "batch1entity2" });
+                        repository.setMutableCopy("batch2", { ...batch2entity1, value: "batch2entity1" });
+                    });
+
+                    test.each([["batch1", "entity1"], ["batch1", "entity2"], ["batch2", "entity1"]])(
+                        "%p in %p is properly updated",
+                        (batchId, entityId) =>
+                            expect(repository.mutableCopyById(batchId, entityId)).toStrictEqual({
+                                id: entityId,
+                                value: batchId + entityId
+                            })
+                    );
+
+                    describe("and discarding some changes", () => {
+                        beforeEach(() => {
+                            repository.discardMutableCopy("batch1", "entity1");
+                        });
+
+                        it("the mutable copy of entity1 in batch1 is reset", () =>
+                            expect(repository.mutableCopyById("batch1", "entity1")).toStrictEqual({
+                                id: "entity1",
+                                value: "value-entity1"
+                            })
+                        );
+
+                        test.each([["batch1", "entity2"], ["batch2", "entity1"]])(
+                            "%p in %p is still in the updated state",
+                            (batchId, entityId) =>
+                                expect(repository.mutableCopyById(batchId, entityId)).toStrictEqual({
+                                    id: entityId,
+                                    value: batchId + entityId
+                                })
+                        );
+                    });
+                });
+
+                describe("after resetting the repository", () => {
+                    beforeEach(() => repository.reset());
+
+                    describe("calls to `mutableCopyById`", () => {
+                        let nextReturnValue: TestEntity | undefined;
+
+                        beforeEach(() => (nextReturnValue = repository.mutableCopyById("batch1", "entity1")));
+
+                        it("return `undefined`", () => expect(nextReturnValue).toBeUndefined());
+
+                        // Two initial calls and one call after resetting the repository.
+                        it("call `fetchById` again", () => expect(spyFetchById).toBeCalledTimes(3));
+                    });
+                });
+            });
+        });
+
         describe("`waitForId`", () => {
             let waitForIdPromise1: Promise<void>;
             let waitForIdPromise2: Promise<void>;
@@ -326,6 +429,115 @@ describe("IndexableRepository", () => {
             });
 
             it("makes the Promise reject", () => expect(byIdAsyncPromise).rejects.toEqual(expect.any(Error)));
+        });
+    });
+});
+
+describe("IndexableRepository with a custom index type and clone function", () => {
+    // This testing scenario is deliberately chosen in such a weird fashion.
+    // The id of a value is given by flooring it to a multiple of 100.
+    // When creating a mutable copy, the value is increased by one
+    // (which only changes the internal value) but not the id.
+
+    type TestEntity = number;
+
+    let spyFetchById: jest.Mock<TestEntity, [number]>;
+    let repository: TestRepository;
+
+    class TestRepository extends IndexableRepository<TestEntity, number, number> {
+        protected async fetchById(id: number): Promise<TestEntity> {
+            return spyFetchById(id);
+        }
+
+        protected extractId(entity: TestEntity): number {
+            return Math.floor(entity / 100) * 100;
+        }
+    }
+
+    function cloneEntity(entity: TestEntity): TestEntity {
+        return entity + 1;
+    }
+
+    beforeEach(() => {
+        spyFetchById = jest.fn();
+        repository = new TestRepository(cloneEntity);
+    });
+
+    describe("with the entity being present", () => {
+        beforeEach(() => spyFetchById.mockImplementation((id: number) => id));
+
+        describe("`mutableCopyById`", () => {
+
+            describe("first call", () => {
+                let returnValue: TestEntity | undefined;
+
+                beforeEach(() => (returnValue = repository.mutableCopyById(1, 100)));
+
+                it("returns `undefined`", () => expect(returnValue).toBeUndefined());
+
+                it("calls `fetchById` with the id", () => expect(spyFetchById).toBeCalledWith(100));
+
+                it("calls `fetchById` once", () => expect(spyFetchById).toBeCalledTimes(1));
+            });
+
+            it("updates after the fetch is done", () => {
+                return new Promise<void>(done => {
+                    let calls = 0;
+
+                    autorun(reaction => {
+                        const result = repository.mutableCopyById(2, 200);
+                        if (calls++ === 0) {
+                            expect(result).toBeUndefined();
+                        } else {
+                            // Note the custom behavior here.
+                            expect(result).toEqual(201);
+                            reaction.dispose();
+                            done();
+                        }
+                    });
+                });
+            });
+
+            describe("call after the some entities have been cached", () => {
+                beforeEach(async () => {
+                    await repository.byIdAsync(300);
+                    await repository.byIdAsync(400);
+                });
+
+                describe("after updating the copies", () => {
+                    beforeEach(() => {
+                        const batch1entity1 = repository.mutableCopyById(1, 300);
+                        const batch1entity2 = repository.mutableCopyById(1, 400);
+                        const batch2entity1 = repository.mutableCopyById(2, 300);
+
+                        repository.setMutableCopy(1, batch1entity1 + 10);
+                        repository.setMutableCopy(1, batch1entity2 + 20);
+                        repository.setMutableCopy(2, batch2entity1 + 30);
+                    });
+
+                    test.each([[1, 300, 311], [1, 400, 421], [2, 300, 331]])(
+                        "%p in %p is properly updated",
+                        (batchId, entityId, expectedValue) =>
+                            expect(repository.mutableCopyById(batchId, entityId)).toStrictEqual(expectedValue)
+                    );
+
+                    describe("and discarding some changes", () => {
+                        beforeEach(() => {
+                            repository.discardMutableCopy(1, 300);
+                        });
+
+                        it("mutable copy of entity1 in batch1 is reset", () =>
+                            expect(repository.mutableCopyById(1, 300)).toStrictEqual(301)
+                        );
+
+                        test.each([[1, 400, 421], [2, 300, 331]])(
+                            "%p in %p is still in the updated state",
+                            (batchId, entityId, expectedValue) =>
+                                expect(repository.mutableCopyById(batchId, entityId)).toStrictEqual(expectedValue)
+                        );
+                    });
+                });
+            });
         });
     });
 });

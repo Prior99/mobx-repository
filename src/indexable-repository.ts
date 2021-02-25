@@ -1,5 +1,6 @@
 import { observable, action, makeObservable } from "mobx";
 import { bind } from "bind-decorator";
+import clone from "clone";
 
 import { RequestStatus, RequestStates } from "./request-states";
 import { PromiseCallbacks, ErrorListener } from "./listeners";
@@ -12,7 +13,7 @@ export interface LoadOptions {
 /**
  * An indexable object which provides basic access to a set of entities by id.
  */
-export interface Indexable<TEntity, TId = string> {
+export interface Indexable<TEntity, TId = string, TBatchId = string> {
     /**
      * Access an entity synchronously by its id.
      * This will return `undefined` at first (if the entity is not yet in the cache), but load the entity
@@ -23,7 +24,7 @@ export interface Indexable<TEntity, TId = string> {
      * entity was initially loaded. The underlying asynchronous operation will only be performed once.
      *
      * #### Example
-     * 
+     *
      * ```
      *     @observer
      *     class MyComponent extends React.Component<{ id: string }> {
@@ -154,6 +155,75 @@ export interface Indexable<TEntity, TId = string> {
     isKnown(id: TId): boolean;
 
     /**
+     * Access the mutable copy of an entity inside batch `batchId` synchronously by its id.
+     * See [[IndexableRepository.byId]] for information on how the reactivity works.
+     *
+     * This method searches for the entity in the cache and loads it otherwise.
+     * The loaded entity is copied and stored uniquely under `batchId`/`id`.
+     *
+     * #### Example
+     *
+     * ```
+     *     @observer
+     *     class MyComponent extends React.Component<{ id: string }> {
+     *         // Get access to the repository.
+     *         // For example using dependency-injection, context or props.
+     *         private myRepository!: MyRepository;
+     *
+     *         @computed private get mutableCopy() {
+     *             return this.repository.mutableCopyById("uniqueSessionId", this.props.id)
+     *         }
+     *
+     *         @action.bound public changeValue(event: React.SyntheticEvent<HTMLInputElement>): void {
+     *             this.mutableCopy.value = event.target.value;
+     *         }
+     *
+     *         public render() {
+     *             // Handle the case that the entity is currently loading.
+     *             if (!mutableCopy) {
+     *                 return (
+     *                     <div>Loading...</div>
+     *                 );
+     *             }
+     *
+     *             // The render method will be invoked a second time,
+     *             // and this time the entity should be loaded.
+     *             return (
+     *                 <input type="text" onchange={changeValue}>
+     *             );
+     *         }
+     *     }
+     * ```
+     *
+     * @param batchId The id of the batch of mutable entities.
+     *
+     * @param id The id of the entity to access.
+     *
+     * @return A mutable copy of the entity if it was currently copied or `undefined` if it was not yet cached.
+     */
+    mutableCopyById(batchId: TBatchId, id: TId): TEntity | undefined;
+
+    /**
+     * Replace the current mutable copy of an entity in the batch `batchId` with `entity`.
+     *
+     * @param batchId The id of the batch of mutable entities.
+     *
+     * @param id The id of the entity to discard.
+     *
+     * @param id The id of the entity to discard.
+     */
+    setMutableCopy(batchId: TBatchId, entity: TEntity): void;
+
+    /**
+     * Discard the changes applied to the mutable copy of the entity `id` in the batch `batchId`.
+     *
+     * @param batchId The id of the batch of mutable entities.
+     *
+     * @param id The id of the entity to discard.
+     */
+    discardMutableCopy(batchId: TBatchId, id: TId): void;
+
+    /**
      * Manually add an entity to the cache.
      *
      * @param entity The id of the entity to retrieve.
@@ -211,14 +281,27 @@ export interface Indexable<TEntity, TId = string> {
  * }
  * ```
  */
-export abstract class IndexableRepository<TEntity, TId = string> implements Indexable<TEntity, TId>, Repository {
+export abstract class IndexableRepository<TEntity, TId = string, TBatchId = string> implements Indexable<TEntity, TId, TBatchId>, Repository {
+    private cloneEntity: (entity: TEntity) => TEntity;
+
     /**
      * A map including all entities in the cache.
      * Indexed by the ids extracted in [[IndexableRepository.extractId]].
      */
     @observable public entities = new Map<TId, TEntity>();
 
-    constructor() {
+    /**
+     * A map holding batches of mutable copies of entities.
+     * Indexed by a call-site supplied `TBatchId`.
+     *
+     * A batch is a namespace for mutable copies.
+     * It grants precisely control over which mutable copy you want to work with.
+     * A batch is indexed by the ids extracted in [[IndexableRepository.extractId]].
+     */
+    @observable public mutableCopyBatches = new Map<TBatchId, Map<TId, TEntity>>();
+
+    constructor(cloneEntity: (entity: TEntity) => TEntity = clone) {
+        this.cloneEntity = cloneEntity;
         makeObservable(this);
     }
 
@@ -241,7 +324,7 @@ export abstract class IndexableRepository<TEntity, TId = string> implements Inde
      * Implement the actual loading of one entity in this method.
      * If the entity could not be found, the method is expected to return `undefined`.
      * It is okay to have this method reject with an error.
-     * 
+     *
      * #### Example
      * ```
      * protected async fetchById(id: number): Promise<MyEntity> {
@@ -253,11 +336,11 @@ export abstract class IndexableRepository<TEntity, TId = string> implements Inde
      *     return body;
      * }
      * ```
-     * 
+     *
      * @throws The method may throw an error, for example if the entity couldn't be loaded.
-     * 
+     *
      * @param id The id of the entity to load.
-     * 
+     *
      * @return A Promise that resolves with the entity if it could be loaded, or `undefined` if it couldn't be found.
      */
     protected abstract fetchById(id: TId): Promise<TEntity | undefined>;
@@ -265,16 +348,16 @@ export abstract class IndexableRepository<TEntity, TId = string> implements Inde
     /**
      * Implement the extraction of a unique id from a given entity.
      * The id will be used as key for the repository's cache.
-     * 
+     *
      * #### Example
      * ```
      * protected async extractId(entity: MyEntity): number {
      *     return entity.id;
      * }
      * ```
-     * 
+     *
      * @param entity The entity to retrieve the unique id from.
-     * 
+     *
      * @return An id that must be unique within this repository.
      */
     protected abstract extractId(entity: TEntity): TId;
@@ -327,6 +410,44 @@ export abstract class IndexableRepository<TEntity, TId = string> implements Inde
         );
     }
 
+    @bind private batchById(batchId: TBatchId): Map<TId, TEntity> {
+        if (!this.mutableCopyBatches.has(batchId)) {
+            this.mutableCopyBatches.set(batchId, new Map<TId, TEntity>());
+        }
+        return this.mutableCopyBatches.get(batchId)
+    }
+
+    /** @inheritdoc */
+    @bind public mutableCopyById(batchId: TBatchId, id: TId): TEntity | undefined {
+        const batch = this.batchById(batchId);
+        if (!batch.has(id)) {
+            if (this.isLoaded(id)) {
+                // If the resource is already loaded then this method will be synchronous.
+                const entity = this.byId(id);
+                batch.set(id, this.cloneEntity(entity));
+            } else {
+                // Otherwise we need to asynchronously load the entity first.
+                setTimeout(async () => {
+                    const entity = await this.byIdAsync(id);
+                    batch.set(id, this.cloneEntity(entity));
+                });
+            }
+        }
+        return batch.get(id);
+    }
+
+    /** @inheritdoc */
+    @bind public setMutableCopy(batchId: TBatchId, entity: TEntity): void {
+        const batch = this.batchById(batchId);
+        batch.set(this.extractId(entity), entity);
+    }
+
+    /** @inheritdoc */
+    @bind public discardMutableCopy(batchId: TBatchId, id: TId): void {
+        const batch = this.batchById(batchId);
+        batch.delete(id);
+    }
+
     /** @inheritdoc */
     @action.bound public add(entity: TEntity): void {
         this.entities.set(this.extractId(entity), entity);
@@ -340,6 +461,7 @@ export abstract class IndexableRepository<TEntity, TId = string> implements Inde
         });
         this.listenersById.clear();
         this.entities.clear();
+        this.mutableCopyBatches.clear();
     }
 
     /** @inheritdoc */
