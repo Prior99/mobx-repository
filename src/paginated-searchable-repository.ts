@@ -177,7 +177,7 @@ export interface PaginatedSearchable<TQuery, TEntity> extends Searchable<TQuery,
 
     /**
      * Checks whether a specified query was out of bounds earlier, in the specified range.
-     * 
+     *
      * @param query The query to check.
      * @param pagination The pagination to check.
      */
@@ -250,8 +250,8 @@ interface ListenerSpecification<TQuery> {
  * }
  * ```
  */
-export abstract class PaginatedSearchableRepository<TQuery, TEntity, TId = string>
-    extends IndexableRepository<TEntity, TId>
+export abstract class PaginatedSearchableRepository<TQuery, TEntity, TId = string, TBatchId = string>
+    extends IndexableRepository<TEntity, TId, TBatchId>
     implements PaginatedSearchable<TQuery, TEntity> {
 
     constructor() {
