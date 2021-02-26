@@ -222,6 +222,11 @@ describe("IndexableRepository", () => {
                             })
                     );
 
+                    test.each(["entity1", "entity2"])(
+                        "the immutable original %p is not mutated",
+                        (id) => expect(repository.byId(id)).toStrictEqual({ id, value: `value-${id}` })
+                    );
+
                     describe("and discarding some changes", () => {
                         beforeEach(() => {
                             repository.discardMutableCopy("batch1", "entity1");
@@ -241,6 +246,11 @@ describe("IndexableRepository", () => {
                                     id: entityId,
                                     value: batchId + entityId
                                 })
+                        );
+
+                        test.each(["entity1", "entity2"])(
+                            "the immutable original %p is present and not mutated",
+                            (id) => expect(repository.byId(id)).toStrictEqual({ id, value: `value-${id}` })
                         );
                     });
                 });

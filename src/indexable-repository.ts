@@ -414,7 +414,7 @@ export abstract class IndexableRepository<TEntity, TId = string, TBatchId = stri
         if (!this.mutableCopyBatches.has(batchId)) {
             this.mutableCopyBatches.set(batchId, new Map<TId, TEntity>());
         }
-        return this.mutableCopyBatches.get(batchId)
+        return this.mutableCopyBatches.get(batchId);
     }
 
     /** @inheritdoc */
