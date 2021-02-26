@@ -48,7 +48,7 @@ export interface Searchable<TQuery, TEntity> {
      *     class MyComponent extends React.Component<{ id: string }> {
      *         // The current query as entered by the user.
      *         @observable private search = 0;
-     * 
+     *
      *         // Get access to the repository.
      *         // For example using dependency-injection, context or props.
      *         private myRepository!: MyRepository;
@@ -191,7 +191,8 @@ export interface Searchable<TQuery, TEntity> {
  * }
  * ```
  */
-export abstract class SearchableRepository<TQuery, TEntity, TId = string> extends IndexableRepository<TEntity, TId>
+export abstract class SearchableRepository<TQuery, TEntity, TId = string, TBatchId = string>
+    extends IndexableRepository<TEntity, TId, TBatchId>
     implements Searchable<TQuery, TEntity> {
 
     constructor() {
