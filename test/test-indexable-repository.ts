@@ -255,20 +255,80 @@ describe("IndexableRepository", () => {
                     });
                 });
 
-                describe("after resetting the repository", () => {
-                    beforeEach(() => repository.reset());
+                describe("after resetting the repository, `mutableCopyById`", () => {
+                    let nextReturnValue: TestEntity | undefined;
 
-                    describe("calls to `mutableCopyById`", () => {
-                        let nextReturnValue: TestEntity | undefined;
-
-                        beforeEach(() => (nextReturnValue = repository.mutableCopyById("batch1", "entity1")));
-
-                        it("return `undefined`", () => expect(nextReturnValue).toBeUndefined());
-
-                        // Two initial calls and one call after resetting the repository.
-                        it("call `fetchById` again", () => expect(spyFetchById).toBeCalledTimes(3));
+                    beforeEach(() => {
+                        repository.reset()
+                        nextReturnValue = repository.mutableCopyById("batch1", "entity1");
                     });
+
+                    it("returns `undefined`", () => expect(nextReturnValue).toBeUndefined());
+
+                    // Two initial calls and one call after resetting the repository.
+                    it("calls `fetchById` again", () => expect(spyFetchById).toBeCalledTimes(3));
                 });
+            });
+        });
+
+        describe("`mutableCopyByIdAsync`", () => {
+            let returnValue: TestEntity | undefined;
+
+            beforeEach(async () => {
+                returnValue = await repository.mutableCopyByIdAsync("some", "thing");
+                returnValue.value = returnValue.value + "-modified";
+            });
+
+            it("returns the entity", () => expect(returnValue).toEqual({ id: "thing", value: "value-thing-modified" }));
+
+            it("calls `fetchById` with the id", () => expect(spyFetchById).toBeCalledWith("thing"));
+
+            it("calls `fetchById` once", () => expect(spyFetchById).toBeCalledTimes(1));
+
+            describe("a subsequent call to `mutableCopyById`", () => {
+                let nextReturnValue: TestEntity | undefined;
+
+                beforeEach(() => (nextReturnValue = repository.mutableCopyById("some", "thing")));
+
+                it("returns the entity", () => expect(nextReturnValue).toEqual({ id: "thing", value: "value-thing-modified" }));
+
+                it("doesn't call `fetchById` again", () => expect(spyFetchById).toBeCalledTimes(1));
+            });
+
+            describe("a subsequent call to `mutableCopyByIdAsync`", () => {
+                let nextReturnValue: TestEntity | undefined;
+
+                beforeEach(async () => (nextReturnValue = await repository.mutableCopyByIdAsync("some", "thing")));
+
+                it("returns the entity", () => expect(nextReturnValue).toEqual({ id: "thing", value: "value-thing-modified" }));
+
+                it("doesn't call `fetchById` again", () => expect(spyFetchById).toBeCalledTimes(1));
+            });
+
+            describe("after resetting the repository, `mutableCopyByIdAsync`", () => {
+                let nextReturnValue: TestEntity | undefined;
+
+                beforeEach(async () => {
+                    repository.reset();
+                    nextReturnValue = await repository.mutableCopyByIdAsync("some", "thing");
+                });
+
+                it("returns the entity", () => expect(nextReturnValue).toEqual({ id: "thing", value: "value-thing" }));
+
+                it("calls `fetchById` again", () => expect(spyFetchById).toBeCalledTimes(2));
+            });
+
+            describe("after evicting the entity, a call to `mutableCopyByIdAsync`", () => {
+                let nextReturnValue: TestEntity | undefined;
+
+                beforeEach(async () => {
+                    repository.evict("thing");
+                    nextReturnValue = await repository.mutableCopyByIdAsync("some", "thing");
+                });
+
+                it("returns the entity", () => expect(nextReturnValue).toStrictEqual({ id: "thing", value: "value-thing-modified" }));
+
+                it("doesn't calls `fetchById` again", () => expect(spyFetchById).toBeCalledTimes(1));
             });
         });
 
