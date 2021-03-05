@@ -254,8 +254,8 @@ export abstract class PaginatedSearchableRepository<TQuery, TEntity, TId = strin
     extends IndexableRepository<TEntity, TId, TBatchId>
     implements PaginatedSearchable<TQuery, TEntity> {
 
-    constructor() {
-        super();
+    constructor(cloneEntity?: (entity: TEntity) => TEntity) {
+        super(cloneEntity);
         makeObservable(this);
     }
 
