@@ -204,6 +204,42 @@ export interface Indexable<TEntity, TId = string, TBatchId = string> {
     mutableCopyById(batchId: TBatchId, id: TId): TEntity | undefined;
 
     /**
+     * Access the mutable copy of an entity inside `batchId` asynchronously by its id.
+     * Has the same call signature as [[Indexable.mutableCopyById]], but returns a Promise.
+     * This will resolve to the mutable copy of an entity if no error occurred while loading it.
+     *
+     * As repositories are implemented as caches, this operation can be performed without cost after the
+     * entity was initially loaded. The underlying asynchronous operation will only be performed once.
+     *
+     * #### Example
+     * ```
+     *     class MyService {
+     *         // Get access to the repository.
+     *         // For example using dependency-injection, context or props.
+     *         private myRepository!: MyRepository;
+     *
+     *         public async getModifiedName(batchId: string): Promise<name> {
+     *             const myEntity = await this.myRepository.mutableCopyByIdAsync(batchId);
+     *             if (!myEntity) {
+     *                 throw new Error("Entity not found or failed to be loaded.");
+     *             }
+     *             return myEntity.name;
+     *         }
+     *     }
+     * ```
+     *
+     * @param batchId The id of the batch of mutable entities.
+     *
+     * @throws Will throw if loading the entity failed or if the entity was evicted after being loaded but before
+     *     this Promise resolved.
+     *
+     * @param id The id of the entity to retrieve.
+     *
+     * @return A Promise resolving to the mutable copy of the entity or `undefined` if it failed to load.
+     */
+    mutableCopyByIdAsync(batchId: TBatchId, id: TId): Promise<TEntity | undefined>;
+
+    /**
      * Replace the current mutable copy of an entity in the batch `batchId` with `entity`.
      *
      * @param batchId The id of the batch of mutable entities.
@@ -432,6 +468,16 @@ export abstract class IndexableRepository<TEntity, TId = string, TBatchId = stri
                     batch.set(id, this.cloneEntity(entity));
                 });
             }
+        }
+        return batch.get(id);
+    }
+
+    /** @inheritdoc */
+    @bind public async mutableCopyByIdAsync(batchId: TBatchId, id: TId): Promise<TEntity | undefined> {
+        const batch = this.batchById(batchId);
+        if (!batch.has(id)) {
+            const entity = await this.byIdAsync(id)
+            batch.set(id, this.cloneEntity(entity));
         }
         return batch.get(id);
     }
