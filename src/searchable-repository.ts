@@ -1,4 +1,4 @@
-import { action, makeObservable, transaction } from "mobx";
+import { makeObservable, override, transaction } from "mobx";
 import { bind } from "bind-decorator";
 
 import { IndexableRepository } from "./indexable-repository";
@@ -261,7 +261,7 @@ export abstract class SearchableRepository<TQuery, TEntity, TId = string, TBatch
     }
 
     /** @inheritdoc */
-    @action.bound public evict(id: TId): void {
+    @override public evict(id: TId): void {
         super.evict(id);
         this.stateByQuery.forEach(info => {
             if (info.state.resultingIds.has(id)) {
@@ -279,7 +279,7 @@ export abstract class SearchableRepository<TQuery, TEntity, TId = string, TBatch
     }
 
     /** @inheritdoc */
-    @action.bound public reset(): void {
+    @override public reset(): void {
         super.reset();
         this.listenersByQuery.forEach(listener => {
             listener.forEach(({ reject }) => reject(new Error("Repository was reset while waiting.")));

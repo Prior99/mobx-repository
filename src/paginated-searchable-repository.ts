@@ -1,4 +1,4 @@
-import { action, makeObservable, transaction } from "mobx";
+import { makeObservable, override, transaction } from "mobx";
 import { bind } from "bind-decorator";
 import deepEqual from "deep-equal";
 
@@ -339,7 +339,7 @@ export abstract class PaginatedSearchableRepository<TQuery, TEntity, TId = strin
     }
 
     /** @inheritdoc */
-    @action.bound public evict(id: TId): void {
+    @override public evict(id: TId): void {
         super.evict(id);
         this.stateByQuery.forEach(info => {
             if (info.state.paginationRange.hasId(id)) {
@@ -358,7 +358,7 @@ export abstract class PaginatedSearchableRepository<TQuery, TEntity, TId = strin
     }
 
     /** @inheritdoc */
-    @action.bound public reset(): void {
+    @override public reset(): void {
         super.reset();
         this.listenersByQuery.forEach(({ listener }) =>
             listener.reject(new Error("Repository was reset while waiting.")),
