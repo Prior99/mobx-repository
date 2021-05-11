@@ -339,6 +339,11 @@ chrome-trace-event@^1.0.2:
   dependencies:
     tslib "^1.9.0"
 
+clone@^2.1.2:
+  version "2.1.2"
+  resolved "https://registry.yarnpkg.com/clone/-/clone-2.1.2.tgz#1b7f4b9f591f1e8f83670401600345a02887435f"
+  integrity sha1-G39Ln1kfHo+DZwQBYANFoCiHQ18=
+
 color-convert@^1.9.0:
   version "1.9.3"
   resolved "https://registry.yarnpkg.com/color-convert/-/color-convert-1.9.3.tgz#bb71850690e1f136567de629d2d5471deda4c1e8"
@@ -912,9 +917,9 @@ locate-path@^6.0.0:
     p-locate "^5.0.0"
 
 lodash@^4.17.15:
-  version "4.17.20"
-  resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.20.tgz#b44a9b6297bcb698f1c51a3545a2b3b368d59c52"
-  integrity sha512-PlhdFcillOINfeV7Ni6oF1TAEayyZBoZ8bcshTHqOYJYlrqzRK5hagpagky5o4HfCzzd1TRkXPMFq6cKk9rGmA==
+  version "4.17.21"
+  resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.21.tgz#679591c564c3bffaae8454cf0b3df370c3d6911c"
+  integrity sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==
 
 loose-envify@^1.1.0:
   version "1.4.0"
@@ -971,6 +976,11 @@ mobx-react-lite@^3.1.6:
   resolved "https://registry.yarnpkg.com/mobx-react-lite/-/mobx-react-lite-3.1.6.tgz#e7f4809ab66edd1acca5adb00c6b88c600ae1952"
   integrity sha512-MM3x9BLt5nC7iE/ILA5n2+hfrplEKYbFjqROEuGkzBdZP/KD+Z44+2gseczRrTG0xFuiPWfEzgT68+6/zqOiEw==
 
+mobx-react-lite@^3.2.0:
+  version "3.2.0"
+  resolved "https://registry.yarnpkg.com/mobx-react-lite/-/mobx-react-lite-3.2.0.tgz#331d7365a6b053378dfe9c087315b4e41c5df69f"
+  integrity sha512-q5+UHIqYCOpBoFm/PElDuOhbcatvTllgRp3M1s+Hp5j0Z6XNgDbgqxawJ0ZAUEyKM8X1zs70PCuhAIzX1f4Q/g==
+
 mobx-react@^7.0.5:
   version "7.0.5"
   resolved "https://registry.yarnpkg.com/mobx-react/-/mobx-react-7.0.5.tgz#a458ec3fd44349d398274eb08aec1abe9b5129ff"
@@ -978,14 +988,22 @@ mobx-react@^7.0.5:
   dependencies:
     mobx-react-lite "^3.1.6"
 
+mobx-react@^7.1.0:
+  version "7.1.0"
+  resolved "https://registry.yarnpkg.com/mobx-react/-/mobx-react-7.1.0.tgz#d947cada3cfad294b4b6f692e969c242b9c16eaf"
+  integrity sha512-DxvA6VXmnZ+N9f/UTtolWtdRnAAQY2iHWTSPLktfpj8NKlXUe4dabBAjuXrBcZUM8GjLWnxD1ZEjssXq1M0RAw==
+  dependencies:
+    mobx-react-lite "^3.2.0"
+
 "mobx-repository@file:..":
-  version "0.2.5"
+  version "0.3.3"
   dependencies:
     bind-decorator "^1.0.11"
+    clone "^2.1.2"
     deep-equal "^2.0.5"
-    mobx-react "^7.0.5"
-    react "^17.0.1"
-    react-dom "^17.0.1"
+    mobx-react "^7.1.0"
+    react "^17.0.2"
+    react-dom "^17.0.2"
     typescript-debounce-decorator "^0.0.18"
 
 mobx@^6.0.4:
@@ -1178,10 +1196,27 @@ react-dom@^17.0.1:
     object-assign "^4.1.1"
     scheduler "^0.20.1"
 
+react-dom@^17.0.2:
+  version "17.0.2"
+  resolved "https://registry.yarnpkg.com/react-dom/-/react-dom-17.0.2.tgz#ecffb6845e3ad8dbfcdc498f0d0a939736502c23"
+  integrity sha512-s4h96KtLDUQlsENhMn1ar8t2bEa+q/YAtj8pPPdIjPDGBDIVNsrD9aXNWqspUe6AzKCIG0C1HZZLqLV7qpOBGA==
+  dependencies:
+    loose-envify "^1.1.0"
+    object-assign "^4.1.1"
+    scheduler "^0.20.2"
+
 react@^17.0.1:
   version "17.0.1"
   resolved "https://registry.yarnpkg.com/react/-/react-17.0.1.tgz#6e0600416bd57574e3f86d92edba3d9008726127"
   integrity sha512-lG9c9UuMHdcAexXtigOZLX8exLWkW0Ku29qPRU8uhF2R9BN96dLCt0psvzPLlHc5OWkgymP3qwTRgbnw5BKx3w==
+  dependencies:
+    loose-envify "^1.1.0"
+    object-assign "^4.1.1"
+
+react@^17.0.2:
+  version "17.0.2"
+  resolved "https://registry.yarnpkg.com/react/-/react-17.0.2.tgz#d0b5cc516d29eb3eee383f75b62864cfb6800037"
+  integrity sha512-gnhPt75i/dq/z3/6q/0asP78D0u592D5L1pd7M8P+dck6Fu/jJeL6iVVK23fptSUZj8Vjf++7wXA8UNclGQcbA==
   dependencies:
     loose-envify "^1.1.0"
     object-assign "^4.1.1"
@@ -1253,6 +1288,14 @@ scheduler@^0.20.1:
   version "0.20.1"
   resolved "https://registry.yarnpkg.com/scheduler/-/scheduler-0.20.1.tgz#da0b907e24026b01181ecbc75efdc7f27b5a000c"
   integrity sha512-LKTe+2xNJBNxu/QhHvDR14wUXHRQbVY5ZOYpOGWRzhydZUqrLb2JBvLPY7cAqFmqrWuDED0Mjk7013SZiOz6Bw==
+  dependencies:
+    loose-envify "^1.1.0"
+    object-assign "^4.1.1"
+
+scheduler@^0.20.2:
+  version "0.20.2"
+  resolved "https://registry.yarnpkg.com/scheduler/-/scheduler-0.20.2.tgz#4baee39436e34aa93b4874bddcbf0fe8b8b50e91"
+  integrity sha512-2eWfGgAqqWFGqtdMmcL5zCMK1U8KlXv8SQFGglL3CEtd0aDVDWgeF/YoCmvln55m5zSk3J/20hTaSBeSObsQDQ==
   dependencies:
     loose-envify "^1.1.0"
     object-assign "^4.1.1"
