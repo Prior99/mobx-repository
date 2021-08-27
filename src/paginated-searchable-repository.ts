@@ -1,5 +1,4 @@
 import { makeObservable, override, transaction } from "mobx";
-import { bind } from "bind-decorator";
 import deepEqual from "deep-equal";
 
 import { RequestStates, RequestStatus } from "./request-states";
@@ -253,7 +252,6 @@ interface ListenerSpecification<TQuery> {
 export abstract class PaginatedSearchableRepository<TQuery, TEntity, TId = string, TBatchId = string>
     extends IndexableRepository<TEntity, TId, TBatchId>
     implements PaginatedSearchable<TQuery, TEntity> {
-
     constructor(cloneEntity?: (entity: TEntity) => TEntity) {
         super(cloneEntity);
         makeObservable(this);
@@ -305,19 +303,19 @@ export abstract class PaginatedSearchableRepository<TQuery, TEntity, TId = strin
     protected abstract fetchByQuery(query: TQuery, pagination: Segment): Promise<FetchByQueryResult<TEntity>>;
 
     /** @inheritdoc */
-    @bind public byQuery(query: TQuery, pagination: Partial<Pagination> = {}): TEntity[] {
+    public byQuery(query: TQuery, pagination: Partial<Pagination> = {}): TEntity[] {
         setTimeout(() => this.loadByQuery(query, pagination));
         return this.resolveEntities(query, pagination);
     }
 
     /** @inheritdoc */
-    @bind public async byQueryAsync(query: TQuery, pagination: Partial<Pagination> = {}): Promise<TEntity[]> {
+    public async byQueryAsync(query: TQuery, pagination: Partial<Pagination> = {}): Promise<TEntity[]> {
         await this.loadByQuery(query, pagination);
         return this.resolveEntities(query, pagination);
     }
 
     /** @inheritdoc */
-    @bind public waitForQuery(query: TQuery, partialPagination: Partial<Pagination> = {}): Promise<void> {
+    public waitForQuery(query: TQuery, partialPagination: Partial<Pagination> = {}): Promise<void> {
         const pagination = this.completePagination(partialPagination);
         return new Promise((resolve, reject) => {
             const listener = { resolve, reject };
@@ -325,13 +323,13 @@ export abstract class PaginatedSearchableRepository<TQuery, TEntity, TId = strin
         });
     }
 
-    @bind protected resolveEntities(query: TQuery, partialPagination: Partial<Pagination>): TEntity[] {
+    protected resolveEntities(query: TQuery, partialPagination: Partial<Pagination>): TEntity[] {
         const pagination = this.completePagination(partialPagination);
         const { paginationRange } = this.stateByQuery.getState(query);
-        return [...paginationRange.getIds(pagination)].map(id => this.entities.get(id)!);
+        return [...paginationRange.getIds(pagination)].map((id) => this.entities.get(id)!);
     }
 
-    @bind private isQueryDoneInRange(query: TQuery, pagination: Pagination): boolean {
+    private isQueryDoneInRange(query: TQuery, pagination: Pagination): boolean {
         if (!this.stateByQuery.isStatus(query, RequestStatus.DONE)) {
             return false;
         }
@@ -341,7 +339,7 @@ export abstract class PaginatedSearchableRepository<TQuery, TEntity, TId = strin
     /** @inheritdoc */
     @override public evict(id: TId): void {
         super.evict(id);
-        this.stateByQuery.forEach(info => {
+        this.stateByQuery.forEach((info) => {
             if (info.state.paginationRange.hasId(id)) {
                 this.stateByQuery.delete(info.id);
                 this.callListenersByQuery(info.id, new Error("Entity was evicted while waiting."));
@@ -350,7 +348,7 @@ export abstract class PaginatedSearchableRepository<TQuery, TEntity, TId = strin
     }
 
     /** @inheritdoc */
-    @bind public async reloadQuery(query: TQuery, pagination: Partial<Pagination> = {}): Promise<TEntity[]> {
+    public async reloadQuery(query: TQuery, pagination: Partial<Pagination> = {}): Promise<TEntity[]> {
         return await transaction(async () => {
             this.stateByQuery.delete(query);
             return await this.byQueryAsync(query, pagination);
@@ -367,13 +365,47 @@ export abstract class PaginatedSearchableRepository<TQuery, TEntity, TId = strin
         this.stateByQuery.reset();
     }
 
-    @bind private callListenersByQuery(query: TQuery, error?: Error): void {
+    public async waitForIdle(): Promise<void> {
+        await super.waitForIdle();
+        await Promise.all(
+            [...this.listenersByQuery.values()].map(({ listener }) => {
+                return new Promise<void>((resolve) => {
+                    const { resolve: wrappedResolve, reject: wrappedReject } = listener;
+                    listener.resolve = () => {
+                        wrappedResolve();
+                        resolve();
+                    };
+                    listener.reject = (...args) => {
+                        wrappedReject(...args);
+                        resolve();
+                    };
+                });
+            }),
+        );
+    }
+
+    private isFullyLoaded(query: TQuery, pagination: Pagination): boolean {
+        const state = this.stateByQuery.getState(query);
+        const completed = state.paginationRange.isFullyLoaded(pagination);
+        if (completed) {
+            return true;
+        }
+        const { limit } = state;
+        if (limit === undefined) {
+            return false;
+        }
+        const missingSegments = state.paginationRange.getMissingSegments(pagination);
+        if (missingSegments.length === 1 && missingSegments[0].offset >= limit) {
+            return true;
+        }
+        return false;
+    }
+
+    private callListenersByQuery(query: TQuery, error?: Error): void {
         [...this.listenersByQuery]
-            .filter(listenerSpec => deepEqual(query, listenerSpec.query))
-            .forEach(listenerSpec => {
-                const completed = this.stateByQuery
-                    .getState(query)
-                    .paginationRange.isFullyLoaded(listenerSpec.pagination);
+            .filter((listenerSpec) => deepEqual(query, listenerSpec.query))
+            .forEach((listenerSpec) => {
+                const completed = this.isFullyLoaded(query, listenerSpec.pagination);
                 if (!error && !completed) {
                     return;
                 }
@@ -387,13 +419,15 @@ export abstract class PaginatedSearchableRepository<TQuery, TEntity, TId = strin
     }
 
     /** @inheritdoc */
-    @bind public wasOutOfBounds(query: TQuery, pagination: Pagination): boolean {
+    public wasOutOfBounds(query: TQuery, pagination: Pagination): boolean {
         const { limit } = this.stateByQuery.getState(query);
-        if (typeof limit !== "number") { return false; }
+        if (typeof limit !== "number") {
+            return false;
+        }
         return limit < pagination.count + pagination.offset;
     }
 
-    @bind private async loadByQuery(query: TQuery, partialPagination: Partial<Pagination>): Promise<void> {
+    private async loadByQuery(query: TQuery, partialPagination: Partial<Pagination>): Promise<void> {
         const pagination = this.completePagination(partialPagination);
         if (
             this.isQueryDoneInRange(query, pagination) ||
@@ -409,24 +443,21 @@ export abstract class PaginatedSearchableRepository<TQuery, TEntity, TId = strin
         this.stateByQuery.setStatus(query, RequestStatus.IN_PROGRESS);
         const segmentsToLoad = this.stateByQuery.getState(query).paginationRange.getMissingSegments(pagination);
         try {
-            await Promise.all(segmentsToLoad.map(segment => this.loadIndividualRange(query, segment)));
+            await Promise.all(segmentsToLoad.map((segment) => this.loadIndividualRange(query, segment)));
             this.stateByQuery.setStatus(query, RequestStatus.DONE);
             this.callListenersByQuery(query);
         } catch (error) {
             this.stateByQuery.setStatus(query, RequestStatus.ERROR, error);
-            this.errorListeners.forEach(callback => callback(error));
+            this.errorListeners.forEach((callback) => callback(error));
             this.callListenersByQuery(query, error);
         }
     }
 
-    @bind private async loadIndividualRange(
-        query: TQuery,
-        segment: Segment,
-    ): Promise<FetchByQueryResult<TEntity>> {
+    private async loadIndividualRange(query: TQuery, segment: Segment): Promise<FetchByQueryResult<TEntity>> {
         const result = await this.fetchByQuery(query, segment);
         transaction(() => {
-            result.entities.forEach(entity => this.add(entity));
-            const ids = new Set(result.entities.map(entity => this.extractId(entity)));
+            result.entities.forEach((entity) => this.add(entity));
+            const ids = new Set(result.entities.map((entity) => this.extractId(entity)));
             const state = this.stateByQuery.getState(query);
             state.paginationRange.add(new SegmentWithIds(segment.offset, ids));
             if (result.entities.length < segment.count) {
@@ -436,7 +467,7 @@ export abstract class PaginatedSearchableRepository<TQuery, TEntity, TId = strin
         return result;
     }
 
-    @bind private completePagination(partialPagination: Partial<Pagination>): Pagination {
+    private completePagination(partialPagination: Partial<Pagination>): Pagination {
         return { count: partialPagination.count ?? this.defaultCount, offset: partialPagination.offset ?? 0 };
     }
 }

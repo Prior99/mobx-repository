@@ -1,4 +1,3 @@
-import bind from "bind-decorator";
 import { action, makeObservable, observable } from "mobx";
 
 /**
@@ -82,7 +81,7 @@ export class RequestStates<TId = string, TState = undefined, TError = Error> {
      *
      * @param callback A method called once for every known [[RequestInfo]].
      */
-    @bind public forEach(callback: (info: RequestInfo<TId, TState, TError>) => void): void {
+    public forEach(callback: (info: RequestInfo<TId, TState, TError>) => void): void {
         this.requestStates.forEach(info => callback(info));
     }
 
@@ -143,7 +142,7 @@ export class RequestStates<TId = string, TState = undefined, TError = Error> {
      * 
      * @return The state.
      */
-    @bind public getState(id: TId): TState {
+    public getState(id: TId): TState {
         return this.get(id).state;
     }
 
@@ -155,7 +154,7 @@ export class RequestStates<TId = string, TState = undefined, TError = Error> {
      * 
      * @return `true` if the request's status was included in the list of specified status and `false` otherwise.
      */
-    @bind public isStatus(id: TId, ...status: RequestStatus[]): boolean {
+    public isStatus(id: TId, ...status: RequestStatus[]): boolean {
         return status.indexOf(this.get(id).status) !== -1;
     }
 
@@ -183,7 +182,7 @@ export class RequestStates<TId = string, TState = undefined, TError = Error> {
      * 
      * @return All information about the specified request.
      */
-    @bind public get(id: TId): RequestInfo<TId, TState, TError> {
+    public get(id: TId): RequestInfo<TId, TState, TError> {
         const key = JSON.stringify(id);
         if (!this.requestStates.has(key)) {
             return {

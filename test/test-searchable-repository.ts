@@ -69,10 +69,10 @@ describe("SearchableRepository", () => {
 
             describe("`byQuery` reactivity", () => {
                 it("updates after the fetch is done", () => {
-                    return new Promise<void>(done => {
+                    return new Promise<void>((done) => {
                         let calls = 0;
 
-                        autorun(reaction => {
+                        autorun((reaction) => {
                             const result = repository.byQuery({ count: 2, search: "some" });
                             if (calls++ === 0) {
                                 expect(result).toEqual([]);
@@ -101,14 +101,8 @@ describe("SearchableRepository", () => {
                 spyReject1 = jest.fn();
                 spyResolve2 = jest.fn();
                 spyReject2 = jest.fn();
-                repository
-                    .waitForQuery(query)
-                    .then(spyResolve1)
-                    .catch(spyReject1);
-                repository
-                    .waitForQuery(query)
-                    .then(spyResolve2)
-                    .catch(spyReject2);
+                repository.waitForQuery(query).then(spyResolve1).catch(spyReject1);
+                repository.waitForQuery(query).then(spyResolve2).catch(spyReject2);
             });
             it("is still pending", () => {
                 expect(spyResolve1).not.toHaveBeenCalled();
@@ -195,7 +189,7 @@ describe("SearchableRepository", () => {
                     spyFetchByQuery.mockImplementation(() => [
                         { id: "id-3", value: "value-some-3" },
                         { id: "id-4", value: "value-some-4" },
-                    ])
+                    ]);
                     nextReturnValue = await repository.reloadQuery(query);
                 });
 
@@ -206,7 +200,7 @@ describe("SearchableRepository", () => {
                     ]));
 
                 it("calls `fetchByQuery` again", () => expect(spyFetchByQuery).toBeCalledTimes(2));
-            })
+            });
 
             describe("consecutive calls to `byQueryAsync`", () => {
                 let nextReturnValue: TestEntity[];
@@ -355,6 +349,92 @@ describe("SearchableRepository", () => {
                 beforeEach(async () => await repository.byQuery(query));
 
                 it("makes the Promise reject", () => expect(waitForQueryPromise).rejects.toEqual(expect.any(Error)));
+            });
+        });
+    });
+
+    describe("waitForIdle", () => {
+        type TestEntity = number;
+
+        let repository: TestRepository;
+        let promises: { resolve: (values: number[]) => void; reject: (err: Error) => void; query: number }[];
+
+        let resolved: boolean;
+        let rejected: Error | undefined;
+
+        class TestRepository extends SearchableRepository<TestEntity, number, number> {
+            protected async fetchByQuery(query: number): Promise<FetchByQueryResult<number>> {
+                const entities = await new Promise<number[]>((resolve, reject) =>
+                    promises.push({ resolve, reject, query }),
+                );
+                return { entities };
+            }
+
+            protected async fetchById(id: number): Promise<TestEntity> {
+                return id;
+            }
+
+            protected extractId(entity: TestEntity): number {
+                return entity;
+            }
+        }
+
+        beforeEach(() => {
+            promises = [];
+            repository = new TestRepository();
+            resolved = false;
+            rejected = undefined;
+        });
+
+        it("resolved immediately initially", () => expect(repository.waitForIdle()).resolves.toBeUndefined());
+
+        describe("with multiple requests", () => {
+            beforeEach(() => {
+                for (let i = 0; i < 10; ++i) {
+                    repository.byQuery(i);
+                    repository.waitForQuery(i).catch((_err) => undefined);
+                }
+                repository
+                    .waitForIdle()
+                    .then(() => (resolved = true))
+                    .catch((err) => (rejected = err));
+            });
+
+            it("doesn't resolve immediately", () => expect(resolved).toBe(false));
+
+            it("doesn't reject immediately", () => expect(rejected).toBeUndefined());
+
+            describe("with some requests resolved", () => {
+                beforeEach(async () => {
+                    promises.slice(0, 5).forEach(({ resolve, query }) => resolve([query]));
+                    await new Promise((resolve) => setTimeout(resolve));
+                });
+
+                it("doesn't resolve yet", () => expect(resolved).toBe(false));
+
+                it("doesn't reject yet", () => expect(rejected).toBeUndefined());
+            });
+
+            describe("with all requests resolved", () => {
+                beforeEach(async () => {
+                    promises.forEach(({ resolve, query }) => resolve([query]));
+                    await new Promise((resolve) => setTimeout(resolve));
+                });
+
+                it("resolved", () => expect(resolved).toBe(true));
+
+                it("doesn't reject", () => expect(rejected).toBeUndefined());
+            });
+
+            describe("with all requests rejected", () => {
+                beforeEach(async () => {
+                    promises.forEach(({ reject }) => reject(new Error("Some error.")));
+                    await new Promise((resolve) => setTimeout(resolve));
+                });
+
+                it("resolved", () => expect(resolved).toBe(true));
+
+                it("doesn't reject", () => expect(rejected).toBeUndefined());
             });
         });
     });

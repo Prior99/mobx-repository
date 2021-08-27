@@ -1,5 +1,3 @@
-import { bind } from "bind-decorator";
-
 import { Pagination } from "./pagination";
 
 /**
@@ -67,7 +65,7 @@ export class Segment implements Pagination {
      * 
      * @return `true` if the segments were adjacent or overlapping and `false` otherwise.
      */
-    @bind public overlaps(other: Segment): boolean {
+    public overlaps(other: Segment): boolean {
         if (this.offset === other.offset) {
             return true;
         }
@@ -89,7 +87,7 @@ export class Segment implements Pagination {
      * 
      * @param at Offset to split at.
      */
-    @bind public split(at: number): [Segment, Segment] | [Segment] {
+    public split(at: number): [Segment, Segment] | [Segment] {
         if (at <= this.offset || at >= this.end - 1) {
             return [new Segment(this.offset, this.count)];
         }
@@ -110,7 +108,7 @@ export class Segment implements Pagination {
      * 
      * @return `true` if the other segment is completely contained within this one, and `false` otherwise.
      */
-    @bind public contains(other: Segment): boolean {
+    public contains(other: Segment): boolean {
         return other.offset >= this.offset && other.end <= this.end;
     }
 
@@ -127,7 +125,7 @@ export class Segment implements Pagination {
      * 
      * @return `true` if the other segment completely contains this one, and `false` otherwise.
      */
-    @bind public containedIn(other: Segment): boolean {
+    public containedIn(other: Segment): boolean {
         return other.contains(this);
     }
 
@@ -145,7 +143,7 @@ export class Segment implements Pagination {
      * 
      * @return A set of new segments without the specified subtrahend.
      */
-    @bind public subtract(subtrahend: Segment | undefined): [] | [Segment] | [Segment, Segment] {
+    public subtract(subtrahend: Segment | undefined): [] | [Segment] | [Segment, Segment] {
         if (!subtrahend || !this.overlaps(subtrahend)) {
             return [new Segment(this)];
         }
@@ -183,7 +181,7 @@ export class Segment implements Pagination {
      * 
      * @return `true` if both offsets and counts were equal and `false` otherwise.
      */
-    @bind public equals(other: Segment): boolean {
+    public equals(other: Segment): boolean {
         return this.offset === other.offset && this.count === other.count;
     }
 }

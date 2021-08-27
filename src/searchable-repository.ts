@@ -5,7 +5,6 @@ import { IndexableRepository } from "./indexable-repository";
 import { PromiseCallbacks } from "./listeners";
 import { RequestStatus, RequestStates } from "./request-states";
 
-
 /**
  * The request state associated with a request from [[SearchableRepository]].
  */
@@ -194,7 +193,6 @@ export interface Searchable<TQuery, TEntity> {
 export abstract class SearchableRepository<TQuery, TEntity, TId = string, TBatchId = string>
     extends IndexableRepository<TEntity, TId, TBatchId>
     implements Searchable<TQuery, TEntity> {
-
     constructor() {
         super();
         makeObservable(this);
@@ -238,19 +236,19 @@ export abstract class SearchableRepository<TQuery, TEntity, TId = string, TBatch
     protected abstract fetchByQuery(query: TQuery): Promise<FetchByQueryResult<TEntity>>;
 
     /** @inheritdoc */
-    @bind public byQuery(query: TQuery): TEntity[] {
+    public byQuery(query: TQuery): TEntity[] {
         setTimeout(() => this.loadByQuery(query));
         return this.resolveEntities(query);
     }
 
     /** @inheritdoc */
-    @bind public async byQueryAsync(query: TQuery): Promise<TEntity[]> {
+    public async byQueryAsync(query: TQuery): Promise<TEntity[]> {
         await this.loadByQuery(query);
         return this.resolveEntities(query);
     }
 
     /** @inheritdoc */
-    @bind public waitForQuery(query: TQuery): Promise<void> {
+    public waitForQuery(query: TQuery): Promise<void> {
         const key = JSON.stringify(query);
         return new Promise((resolve, reject) => {
             if (!this.listenersByQuery.has(key)) {
@@ -263,7 +261,7 @@ export abstract class SearchableRepository<TQuery, TEntity, TId = string, TBatch
     /** @inheritdoc */
     @override public evict(id: TId): void {
         super.evict(id);
-        this.stateByQuery.forEach(info => {
+        this.stateByQuery.forEach((info) => {
             if (info.state.resultingIds.has(id)) {
                 this.stateByQuery.delete(info.id);
             }
@@ -271,7 +269,7 @@ export abstract class SearchableRepository<TQuery, TEntity, TId = string, TBatch
     }
 
     /** @inheritdoc */
-    @bind public async reloadQuery(query: TQuery): Promise<TEntity[]> {
+    public async reloadQuery(query: TQuery): Promise<TEntity[]> {
         return await transaction(async () => {
             this.stateByQuery.delete(query);
             return await this.byQueryAsync(query);
@@ -281,19 +279,28 @@ export abstract class SearchableRepository<TQuery, TEntity, TId = string, TBatch
     /** @inheritdoc */
     @override public reset(): void {
         super.reset();
-        this.listenersByQuery.forEach(listener => {
+        this.listenersByQuery.forEach((listener) => {
             listener.forEach(({ reject }) => reject(new Error("Repository was reset while waiting.")));
         });
         this.listenersByQuery.clear();
         this.stateByQuery.reset();
     }
 
-    @bind private resolveEntities(query: TQuery): TEntity[] {
-        const { resultingIds } = this.stateByQuery.getState(query);
-        return [...resultingIds].map(id => this.entities.get(id)!);
+    public async waitForIdle(): Promise<void> {
+        await super.waitForIdle();
+        await Promise.all(
+            [...this.listenersByQuery.values()].map(
+                (listeners) => new Promise<void>((resolve) => listeners.push({ resolve, reject: () => resolve() })),
+            ),
+        );
     }
 
-    @bind private callListenersByQuery(query: TQuery, error?: Error): void {
+    private resolveEntities(query: TQuery): TEntity[] {
+        const { resultingIds } = this.stateByQuery.getState(query);
+        return [...resultingIds].map((id) => this.entities.get(id)!);
+    }
+
+    private callListenersByQuery(query: TQuery, error?: Error): void {
         const key = JSON.stringify(query);
         if (!this.listenersByQuery.has(key)) {
             return;

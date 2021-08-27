@@ -1,4 +1,3 @@
-import bind from "bind-decorator";
 import { observable, action, computed, makeObservable } from "mobx";
 
 import { tidySegments, SegmentWithIds } from "./segment-with-ids";
@@ -39,7 +38,7 @@ export class PaginationRange<TId> {
      * 
      * @return A set with all ids withing the provided range.
      */
-    @bind getIds(pagination: Pagination): Set<TId> {
+    getIds(pagination: Pagination): Set<TId> {
         return new Set(
             this.segments
                 .reduce((result: SegmentWithIds<TId>[], existing: SegmentWithIds<TId>) => {
@@ -61,7 +60,7 @@ export class PaginationRange<TId> {
      * @return A list of missing segments in the specified range. If the range is fully loaded,
      *     an empty array will be returned.
      */
-    @bind public getMissingSegments(requested: Pagination): Segment[] {
+    public getMissingSegments(requested: Pagination): Segment[] {
         let missingSegments: Segment[] = [new Segment(requested)];
         for (const existing of this.segments) {
             const newMissingSegments: Segment[] = [];
@@ -80,7 +79,7 @@ export class PaginationRange<TId> {
      * 
      * @return `true` if the range is loaded and `false` if at least one id is missing.
      */
-    @bind public isFullyLoaded(requested: Pagination): boolean {
+    public isFullyLoaded(requested: Pagination): boolean {
         return this.getMissingSegments(requested).length === 0;
     }
 
@@ -91,7 +90,7 @@ export class PaginationRange<TId> {
      * 
      * @return `true` if any segment within this range has this id and `false` otherwise.
      */
-    @bind public hasId(id: TId): boolean {
+    public hasId(id: TId): boolean {
         return this.segments.some(segment => segment.hasId(id));
     }
 }

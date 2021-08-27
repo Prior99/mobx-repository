@@ -285,6 +285,14 @@ export interface Indexable<TEntity, TId = string, TBatchId = string> {
      * @return A Promise resolving to the entity or `undefined` if it failed to load.
      */
     reloadId(id: TId): Promise<TEntity>;
+
+    /**
+     * Wait until all operations were performed and no current operations are running.
+     * This operations is guaranteed to resolve. It ignores errors.
+     *
+     * If an operation is started after this method was invoked, it will not be tracked.
+     */
+    waitForIdle(): Promise<void>;
 }
 
 /**
@@ -317,7 +325,8 @@ export interface Indexable<TEntity, TId = string, TBatchId = string> {
  * }
  * ```
  */
-export abstract class IndexableRepository<TEntity, TId = string, TBatchId = string> implements Indexable<TEntity, TId, TBatchId>, Repository {
+export abstract class IndexableRepository<TEntity, TId = string, TBatchId = string>
+    implements Indexable<TEntity, TId, TBatchId>, Repository {
     private cloneEntity: (entity: TEntity) => TEntity;
 
     /**
@@ -399,29 +408,29 @@ export abstract class IndexableRepository<TEntity, TId = string, TBatchId = stri
     protected abstract extractId(entity: TEntity): TId;
 
     /** @inheritdoc */
-    @bind public byId(id: TId): TEntity | undefined {
+    public byId(id: TId): TEntity | undefined {
         setTimeout(() => this.loadById(id));
         return this.entities.get(id);
     }
 
     /** @inheritdoc */
-    @bind public addErrorListener(listener: ErrorListener): void {
+    public addErrorListener(listener: ErrorListener): void {
         this.errorListeners.add(listener);
     }
 
     /** @inheritdoc */
-    @bind public removeErrorListener(listener: ErrorListener): void {
+    public removeErrorListener(listener: ErrorListener): void {
         this.errorListeners.delete(listener);
     }
 
     /** @inheritdoc */
-    @bind public async byIdAsync(id: TId): Promise<TEntity | undefined> {
+    public async byIdAsync(id: TId): Promise<TEntity | undefined> {
         await this.loadById(id);
         return this.entities.get(id);
     }
 
     /** @inheritdoc */
-    @bind public waitForId(id: TId): Promise<void> {
+    public waitForId(id: TId): Promise<void> {
         return new Promise((resolve, reject) => {
             if (!this.listenersById.has(id)) {
                 this.listenersById.set(id, []);
@@ -430,23 +439,34 @@ export abstract class IndexableRepository<TEntity, TId = string, TBatchId = stri
         });
     }
 
+    public async waitForIdle(): Promise<void> {
+        await Promise.all(
+            [...this.listenersById.values()].map(
+                (listeners) => new Promise<void>((resolve) => listeners.push({ resolve, reject: () => resolve() })),
+            ),
+        );
+    }
+
     /** @inheritdoc */
-    @bind public isLoaded(id: TId): boolean {
+    public isLoaded(id: TId): boolean {
         return this.entities.has(id);
     }
 
     /** @inheritdoc */
-    @bind public isKnown(id: TId): boolean {
-        return this.isLoaded(id) || this.stateById.isStatus(
-            id,
-            RequestStatus.ERROR,
-            RequestStatus.IN_PROGRESS,
-            RequestStatus.NOT_FOUND,
-            RequestStatus.DONE,
+    public isKnown(id: TId): boolean {
+        return (
+            this.isLoaded(id) ||
+            this.stateById.isStatus(
+                id,
+                RequestStatus.ERROR,
+                RequestStatus.IN_PROGRESS,
+                RequestStatus.NOT_FOUND,
+                RequestStatus.DONE,
+            )
         );
     }
 
-    @bind private batchById(batchId: TBatchId): Map<TId, TEntity> {
+    private batchById(batchId: TBatchId): Map<TId, TEntity> {
         if (!this.mutableCopyBatches.has(batchId)) {
             this.mutableCopyBatches.set(batchId, new Map<TId, TEntity>());
         }
@@ -454,7 +474,7 @@ export abstract class IndexableRepository<TEntity, TId = string, TBatchId = stri
     }
 
     /** @inheritdoc */
-    @bind public mutableCopyById(batchId: TBatchId, id: TId): TEntity | undefined {
+    public mutableCopyById(batchId: TBatchId, id: TId): TEntity | undefined {
         const batch = this.batchById(batchId);
         if (!batch.has(id)) {
             if (this.isLoaded(id)) {
@@ -473,23 +493,23 @@ export abstract class IndexableRepository<TEntity, TId = string, TBatchId = stri
     }
 
     /** @inheritdoc */
-    @bind public async mutableCopyByIdAsync(batchId: TBatchId, id: TId): Promise<TEntity | undefined> {
+    public async mutableCopyByIdAsync(batchId: TBatchId, id: TId): Promise<TEntity | undefined> {
         const batch = this.batchById(batchId);
         if (!batch.has(id)) {
-            const entity = await this.byIdAsync(id)
+            const entity = await this.byIdAsync(id);
             batch.set(id, this.cloneEntity(entity));
         }
         return batch.get(id);
     }
 
     /** @inheritdoc */
-    @bind public setMutableCopy(batchId: TBatchId, entity: TEntity): void {
+    public setMutableCopy(batchId: TBatchId, entity: TEntity): void {
         const batch = this.batchById(batchId);
         batch.set(this.extractId(entity), entity);
     }
 
     /** @inheritdoc */
-    @bind public discardMutableCopy(batchId: TBatchId, id: TId): void {
+    public discardMutableCopy(batchId: TBatchId, id: TId): void {
         const batch = this.batchById(batchId);
         batch.delete(id);
     }
@@ -502,7 +522,7 @@ export abstract class IndexableRepository<TEntity, TId = string, TBatchId = stri
     /** @inheritdoc */
     @action.bound public reset(): void {
         this.stateById.reset();
-        this.listenersById.forEach(listeners => {
+        this.listenersById.forEach((listeners) => {
             listeners.forEach(({ reject }) => reject(new Error("Repository was reset while waiting.")));
         });
         this.listenersById.clear();
@@ -518,7 +538,7 @@ export abstract class IndexableRepository<TEntity, TId = string, TBatchId = stri
     }
 
     /** @inheritdoc */
-    @bind public async reloadId(id: TId): Promise<TEntity> {
+    public async reloadId(id: TId): Promise<TEntity> {
         await this.loadById(id, { force: true });
         return await this.byIdAsync(id);
     }
@@ -554,7 +574,7 @@ export abstract class IndexableRepository<TEntity, TId = string, TBatchId = stri
             }
             if (this.extractId(result) !== id) {
                 const error = new Error("Fetched entity has different id than requested.");
-                this.errorListeners.forEach(callback => callback(error));
+                this.errorListeners.forEach((callback) => callback(error));
                 throw error;
             }
             this.stateById.setStatus(id, RequestStatus.DONE);
@@ -562,7 +582,7 @@ export abstract class IndexableRepository<TEntity, TId = string, TBatchId = stri
             this.callListenersById(id);
         } catch (error) {
             this.stateById.setStatus(id, RequestStatus.ERROR, error);
-            this.errorListeners.forEach(callback => callback(error));
+            this.errorListeners.forEach((callback) => callback(error));
             this.callListenersById(id, error);
         }
     }

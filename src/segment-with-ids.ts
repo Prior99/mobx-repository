@@ -1,5 +1,3 @@
-import { bind } from "bind-decorator";
-
 import { Segment, sortSegments } from "./segment";
 
 /**
@@ -21,7 +19,7 @@ export class SegmentWithIds<TId> extends Segment {
      * 
      * @return `true` if the id is included in this segment and `false` otherwise.
      */
-    @bind public hasId(id: TId): boolean {
+    public hasId(id: TId): boolean {
         return this.ids.has(id);
     }
 
@@ -47,7 +45,7 @@ export class SegmentWithIds<TId> extends Segment {
      * 
      * @return A new [[SegmentWithIds]].
      */
-    @bind public combine(other: SegmentWithIds<TId>): SegmentWithIds<TId> {
+    public combine(other: SegmentWithIds<TId>): SegmentWithIds<TId> {
         if (this.offset === other.offset) {
             const ids = new Set([...this.ids, ...other.ids]);
             return new SegmentWithIds(this.offset, ids);
@@ -79,7 +77,7 @@ export class SegmentWithIds<TId> extends Segment {
      * 
      * @return A new [[SegmentWithIds]].
      */
-    @bind public intersect(intersection: Segment): SegmentWithIds<TId> | undefined {
+    public intersect(intersection: Segment): SegmentWithIds<TId> | undefined {
         if (intersection.offset > this.end || intersection.end < this.offset) {
             return;
         }

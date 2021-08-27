@@ -138,10 +138,10 @@ describe("IndexableRepository", () => {
 
             describe("`byId` reactivity", () => {
                 it("updates after the fetch is done", () => {
-                    return new Promise<void>(done => {
+                    return new Promise<void>((done) => {
                         let calls = 0;
 
-                        autorun(reaction => {
+                        autorun((reaction) => {
                             const result = repository.byId("some");
                             if (calls++ === 0) {
                                 expect(result).toBeUndefined();
@@ -173,10 +173,10 @@ describe("IndexableRepository", () => {
             });
 
             it("updates after the fetch is done", () => {
-                return new Promise<void>(done => {
+                return new Promise<void>((done) => {
                     let calls = 0;
 
-                    autorun(reaction => {
+                    autorun((reaction) => {
                         const result = repository.mutableCopyById("batchId1", "some");
                         if (calls++ === 0) {
                             expect(result).toBeUndefined();
@@ -213,18 +213,19 @@ describe("IndexableRepository", () => {
                         repository.setMutableCopy("batch2", { ...batch2entity1, value: "batch2entity1" });
                     });
 
-                    test.each([["batch1", "entity1"], ["batch1", "entity2"], ["batch2", "entity1"]])(
-                        "%p in %p is properly updated",
-                        (batchId, entityId) =>
-                            expect(repository.mutableCopyById(batchId, entityId)).toStrictEqual({
-                                id: entityId,
-                                value: batchId + entityId
-                            })
+                    test.each([
+                        ["batch1", "entity1"],
+                        ["batch1", "entity2"],
+                        ["batch2", "entity1"],
+                    ])("%p in %p is properly updated", (batchId, entityId) =>
+                        expect(repository.mutableCopyById(batchId, entityId)).toStrictEqual({
+                            id: entityId,
+                            value: batchId + entityId,
+                        }),
                     );
 
-                    test.each(["entity1", "entity2"])(
-                        "the immutable original %p is not mutated",
-                        (id) => expect(repository.byId(id)).toStrictEqual({ id, value: `value-${id}` })
+                    test.each(["entity1", "entity2"])("the immutable original %p is not mutated", (id) =>
+                        expect(repository.byId(id)).toStrictEqual({ id, value: `value-${id}` }),
                     );
 
                     describe("and discarding some changes", () => {
@@ -235,22 +236,22 @@ describe("IndexableRepository", () => {
                         it("the mutable copy of entity1 in batch1 is reset", () =>
                             expect(repository.mutableCopyById("batch1", "entity1")).toStrictEqual({
                                 id: "entity1",
-                                value: "value-entity1"
-                            })
-                        );
+                                value: "value-entity1",
+                            }));
 
-                        test.each([["batch1", "entity2"], ["batch2", "entity1"]])(
-                            "%p in %p is still in the updated state",
-                            (batchId, entityId) =>
-                                expect(repository.mutableCopyById(batchId, entityId)).toStrictEqual({
-                                    id: entityId,
-                                    value: batchId + entityId
-                                })
+                        test.each([
+                            ["batch1", "entity2"],
+                            ["batch2", "entity1"],
+                        ])("%p in %p is still in the updated state", (batchId, entityId) =>
+                            expect(repository.mutableCopyById(batchId, entityId)).toStrictEqual({
+                                id: entityId,
+                                value: batchId + entityId,
+                            }),
                         );
 
                         test.each(["entity1", "entity2"])(
                             "the immutable original %p is present and not mutated",
-                            (id) => expect(repository.byId(id)).toStrictEqual({ id, value: `value-${id}` })
+                            (id) => expect(repository.byId(id)).toStrictEqual({ id, value: `value-${id}` }),
                         );
                     });
                 });
@@ -259,7 +260,7 @@ describe("IndexableRepository", () => {
                     let nextReturnValue: TestEntity | undefined;
 
                     beforeEach(() => {
-                        repository.reset()
+                        repository.reset();
                         nextReturnValue = repository.mutableCopyById("batch1", "entity1");
                     });
 
@@ -290,7 +291,8 @@ describe("IndexableRepository", () => {
 
                 beforeEach(() => (nextReturnValue = repository.mutableCopyById("some", "thing")));
 
-                it("returns the entity", () => expect(nextReturnValue).toEqual({ id: "thing", value: "value-thing-modified" }));
+                it("returns the entity", () =>
+                    expect(nextReturnValue).toEqual({ id: "thing", value: "value-thing-modified" }));
 
                 it("doesn't call `fetchById` again", () => expect(spyFetchById).toBeCalledTimes(1));
             });
@@ -300,7 +302,8 @@ describe("IndexableRepository", () => {
 
                 beforeEach(async () => (nextReturnValue = await repository.mutableCopyByIdAsync("some", "thing")));
 
-                it("returns the entity", () => expect(nextReturnValue).toEqual({ id: "thing", value: "value-thing-modified" }));
+                it("returns the entity", () =>
+                    expect(nextReturnValue).toEqual({ id: "thing", value: "value-thing-modified" }));
 
                 it("doesn't call `fetchById` again", () => expect(spyFetchById).toBeCalledTimes(1));
             });
@@ -326,7 +329,8 @@ describe("IndexableRepository", () => {
                     nextReturnValue = await repository.mutableCopyByIdAsync("some", "thing");
                 });
 
-                it("returns the entity", () => expect(nextReturnValue).toStrictEqual({ id: "thing", value: "value-thing-modified" }));
+                it("returns the entity", () =>
+                    expect(nextReturnValue).toStrictEqual({ id: "thing", value: "value-thing-modified" }));
 
                 it("doesn't calls `fetchById` again", () => expect(spyFetchById).toBeCalledTimes(1));
             });
@@ -340,7 +344,7 @@ describe("IndexableRepository", () => {
                 waitForIdPromise1 = repository.waitForId("some");
                 repository.byId("some");
                 waitForIdPromise2 = repository.waitForId("some");
-                await new Promise(resolve => setTimeout(resolve));
+                await new Promise((resolve) => setTimeout(resolve));
             });
 
             it("Promise 1 resolves", () => expect(waitForIdPromise1).resolves.toBeUndefined());
@@ -537,7 +541,6 @@ describe("IndexableRepository with a custom index type and clone function", () =
         beforeEach(() => spyFetchById.mockImplementation((id: number) => id));
 
         describe("`mutableCopyById`", () => {
-
             describe("first call", () => {
                 let returnValue: TestEntity | undefined;
 
@@ -551,10 +554,10 @@ describe("IndexableRepository with a custom index type and clone function", () =
             });
 
             it("updates after the fetch is done", () => {
-                return new Promise<void>(done => {
+                return new Promise<void>((done) => {
                     let calls = 0;
 
-                    autorun(reaction => {
+                    autorun((reaction) => {
                         const result = repository.mutableCopyById(2, 200);
                         if (calls++ === 0) {
                             expect(result).toBeUndefined();
@@ -585,10 +588,12 @@ describe("IndexableRepository with a custom index type and clone function", () =
                         repository.setMutableCopy(2, batch2entity1 + 30);
                     });
 
-                    test.each([[1, 300, 311], [1, 400, 421], [2, 300, 331]])(
-                        "%p in %p is properly updated",
-                        (batchId, entityId, expectedValue) =>
-                            expect(repository.mutableCopyById(batchId, entityId)).toStrictEqual(expectedValue)
+                    test.each([
+                        [1, 300, 311],
+                        [1, 400, 421],
+                        [2, 300, 331],
+                    ])("%p in %p is properly updated", (batchId, entityId, expectedValue) =>
+                        expect(repository.mutableCopyById(batchId, entityId)).toStrictEqual(expectedValue),
                     );
 
                     describe("and discarding some changes", () => {
@@ -597,17 +602,96 @@ describe("IndexableRepository with a custom index type and clone function", () =
                         });
 
                         it("mutable copy of entity1 in batch1 is reset", () =>
-                            expect(repository.mutableCopyById(1, 300)).toStrictEqual(301)
-                        );
+                            expect(repository.mutableCopyById(1, 300)).toStrictEqual(301));
 
-                        test.each([[1, 400, 421], [2, 300, 331]])(
-                            "%p in %p is still in the updated state",
-                            (batchId, entityId, expectedValue) =>
-                                expect(repository.mutableCopyById(batchId, entityId)).toStrictEqual(expectedValue)
+                        test.each([
+                            [1, 400, 421],
+                            [2, 300, 331],
+                        ])("%p in %p is still in the updated state", (batchId, entityId, expectedValue) =>
+                            expect(repository.mutableCopyById(batchId, entityId)).toStrictEqual(expectedValue),
                         );
                     });
                 });
             });
+        });
+    });
+});
+
+describe("waitForIdle", () => {
+    type TestEntity = number;
+
+    let repository: TestRepository;
+    let promises: { resolve: (value: number) => void; reject: (err: Error) => void; id: number }[];
+
+    let resolved: boolean;
+    let rejected: Error | undefined;
+
+    class TestRepository extends IndexableRepository<TestEntity, number, number> {
+        protected async fetchById(id: number): Promise<TestEntity> {
+            return new Promise<number>((resolve, reject) => promises.push({ resolve, reject, id }));
+        }
+
+        protected extractId(entity: TestEntity): number {
+            return entity;
+        }
+    }
+
+    beforeEach(() => {
+        promises = [];
+        repository = new TestRepository();
+        resolved = false;
+        rejected = undefined;
+    });
+
+    it("resolved immediately initially", () => expect(repository.waitForIdle()).resolves.toBeUndefined());
+
+    describe("with multiple requests", () => {
+        beforeEach(() => {
+            for (let i = 0; i < 10; ++i) {
+                repository.byId(i);
+                repository.waitForId(i).catch(() => undefined);
+            }
+            repository
+                .waitForIdle()
+                .then(() => (resolved = true))
+                .catch((err) => (rejected = err));
+        });
+
+        it("doesn't resolve immediately", () => expect(resolved).toBe(false));
+
+        it("doesn't reject immediately", () => expect(rejected).toBeUndefined());
+
+        describe("with some requests resolved", () => {
+            beforeEach(async () => {
+                promises.slice(0, 5).forEach(({ resolve, id }) => resolve(id));
+                await new Promise((resolve) => setTimeout(resolve));
+            });
+
+            it("doesn't resolve yet", () => expect(resolved).toBe(false));
+
+            it("doesn't reject yet", () => expect(rejected).toBeUndefined());
+        });
+
+        describe("with all requests resolved", () => {
+            beforeEach(async () => {
+                promises.forEach(({ resolve, id }) => resolve(id));
+                await new Promise((resolve) => setTimeout(resolve));
+            });
+
+            it("resolved", () => expect(resolved).toBe(true));
+
+            it("doesn't reject", () => expect(rejected).toBeUndefined());
+        });
+
+        describe("with all requests rejected", () => {
+            beforeEach(async () => {
+                promises.forEach(({ reject }) => reject(new Error("Some error.")));
+                await new Promise((resolve) => setTimeout(resolve));
+            });
+
+            it("resolved", () => expect(resolved).toBe(true));
+
+            it("doesn't reject", () => expect(rejected).toBeUndefined());
         });
     });
 });
