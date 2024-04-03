@@ -64,11 +64,11 @@
           "argsIgnorePattern": "^_"
         }
       ],
-      "jest/no-conditional-expect": "off"
+      "jest/no-conditional-expect": "off",
+      "jest/no-alias-methods": "off"
     },
     "extends": [
       "eslint:recommended",
-      "plugin:@typescript-eslint/eslint-recommended",
       "plugin:@typescript-eslint/recommended",
       "prettier",
       "plugin:jest/recommended"
@@ -87,9 +87,8 @@
     "@types/deep-equal": "^1.0.4",
     "@types/jest": "^29.5.11",
     "@types/node": "^20.12.3",
-    "@typescript-eslint/eslint-plugin": "^4.22.0",
-    "@typescript-eslint/parser": "^4.22.0",
     "eslint": "^8.57.0",
+    "typescript-eslint": "^7.5.0",
     "eslint-config-prettier": "^9..0",
     "eslint-plugin-jest": "^27.9.9",
     "eslint-plugin-prettier": "^5.1.3",
